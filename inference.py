@@ -8,11 +8,11 @@ to extract structured data from invoice documents. It runs all three tasks
 mandatory OpenEnv [START]/[STEP]/[END] format.
 
 Required environment variables:
-    API_BASE_URL  — OpenAI-compatible API endpoint
-    MODEL_NAME    — Model identifier (e.g. meta-llama/Meta-Llama-3-8B-Instruct)
-    HF_TOKEN      — API key (doubles as HF token for HF Router)
-    ENV_URL       — URL of the running environment server
-                    (default: http://localhost:7860)
+    API_BASE_URL       — OpenAI-compatible API endpoint
+    MODEL_NAME         — Model identifier (e.g. meta-llama/Meta-Llama-3-8B-Instruct)
+    HF_TOKEN           — API key / Hugging Face token (no default)
+    ENV_URL            — URL of the running environment server (default: http://localhost:7860)
+    LOCAL_IMAGE_NAME   — (Optional) Docker image name for from_docker_image() style
 """
 
 import json
@@ -29,16 +29,18 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Meta-Llama-3-8B-Instruct")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
+HF_TOKEN = os.getenv("HF_TOKEN")
 ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
-IMAGE_NAME = os.getenv("IMAGE_NAME", "")
+
+# Optional — if you use from_docker_image():
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 TASKS = ["simple_invoice", "messy_invoice", "multi_document"]
 
 # ---------------------------------------------------------------------------
-# LLM Client
+# LLM Client (OpenAI-compatible, configured via env vars)
 # ---------------------------------------------------------------------------
-llm = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+llm = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 
 # ---------------------------------------------------------------------------
@@ -298,12 +300,12 @@ def main():
 
     container_id = None
 
-    # If IMAGE_NAME is set, start a Docker container
-    if IMAGE_NAME:
-        print(f"Starting Docker container from image: {IMAGE_NAME}")
+    # If LOCAL_IMAGE_NAME is set, start a Docker container
+    if LOCAL_IMAGE_NAME:
+        print(f"Starting Docker container from image: {LOCAL_IMAGE_NAME}")
         try:
             container_id = subprocess.check_output(
-                ["docker", "run", "-d", "--rm", "-p", "7860:7860", IMAGE_NAME],
+                ["docker", "run", "-d", "--rm", "-p", "7860:7860", LOCAL_IMAGE_NAME],
                 stderr=subprocess.STDOUT,
             ).decode().strip()
             ENV_URL = "http://localhost:7860"
