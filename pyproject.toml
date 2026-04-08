@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-invoice-extraction-env"
+version = "0.1.0"
+description = "Invoice Extraction Environment for OpenEnv — extract structured data from unstructured invoices"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "pydantic>=2.0.0",
+    "uvicorn[standard]>=0.24.0",
+    "openai>=1.0.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.setuptools]
+packages = ["invoice_extraction_env", "invoice_extraction_env.server"]
