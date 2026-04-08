@@ -106,7 +106,7 @@ docker run -p 7860:7860 invoice-extraction-env
 ### Run locally
 ```bash
 pip install -r requirements.txt
-uvicorn invoice_extraction_env.server.app:app --host 0.0.0.0 --port 7860
+uvicorn server.app:app --host 0.0.0.0 --port 7860
 ```
 
 ### Run inference
@@ -132,18 +132,19 @@ python inference.py
 
 ## Project Structure
 ```
-├── invoice_extraction_env/
+├── server/
 │   ├── __init__.py
-│   ├── models.py              # Pydantic Action/Observation types
-│   └── server/
-│       ├── __init__.py
-│       ├── app.py             # FastAPI application
-│       ├── environment.py     # Core environment logic
-│       ├── documents.py       # Document corpus
-│       └── graders.py         # Scoring/grading logic
-├── inference.py               # Baseline inference script
-├── openenv.yaml               # OpenEnv manifest
-├── pyproject.toml             # Package configuration
-├── Dockerfile                 # Container definition
-└── README.md                  # This file
+│   ├── app.py             # FastAPI application
+│   ├── environment.py     # Core environment logic
+│   ├── documents.py       # Document corpus
+│   ├── graders.py         # Scoring/grading logic
+│   └── models.py          # Pydantic Action/Observation types
+├── __init__.py            # Package declaration
+├── inference.py           # Baseline inference script
+├── openenv.yaml           # OpenEnv manifest
+├── pyproject.toml         # Package configuration
+├── requirements.txt       # Dependencies
+├── uv.lock                # Dependency lock file
+├── Dockerfile             # Container definition
+└── README.md              # This file
 ```
