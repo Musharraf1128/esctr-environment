@@ -3,9 +3,9 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "openenv-invoice-extraction-env"
+name = "openenv-esctr-environment"
 version = "0.1.0"
-description = "Invoice Extraction Environment for OpenEnv — extract structured data from unstructured invoices"
+description = "Enterprise Supply Chain & Tax Reconciliation Environment for OpenEnv — train LLMs to investigate procurement discrepancies, enforce SLA penalties, and navigate adversarial vendor disputes"
 requires-python = ">=3.10"
 dependencies = [
     "openenv-core>=0.2.0",
