@@ -189,6 +189,9 @@ class Scenario:
     correct_line_item_price: Optional[float] = None
     penalty_amount: Optional[float] = None
     vendor_claim_valid: Optional[bool] = None
+    distractor_purchase_orders: Optional[List[Dict[str, Any]]] = None
+    distractor_invoices: Optional[List[Dict[str, Any]]] = None
+    distractor_documents: Optional[Dict[str, str]] = None
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +230,63 @@ class ProceduralEngine:
 
     def _gen_tracking_id(self) -> str:
         return f"TRK-{self.rng.randint(10000, 99999)}"
+
+    def _gen_distractor_docs(
+        self,
+        buyer: Company,
+        vendor: Company,
+        count: int,
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Dict[str, str]]:
+        """Generate plausible but irrelevant PO/invoice records."""
+        distractor_pos = []
+        distractor_invoices = []
+        docs: Dict[str, str] = {}
+
+        for _ in range(count):
+            po_id = self._gen_id("PO")
+            inv_id = self._gen_id("INV")
+            amount = round(self.rng.uniform(3000.0, 35000.0), 2)
+            line_count = self.rng.randint(1, 4)
+
+            po_summary = {
+                "po_number": po_id,
+                "date": self._gen_date(month_range=(1, 6)),
+                "vendor": vendor.name if self.rng.random() < 0.6 else self._pick(VENDOR_NAMES),
+                "buyer": buyer.name,
+                "total_amount": amount,
+                "line_items": line_count,
+                "relevance_flag": "distractor",
+            }
+            inv_summary = {
+                "invoice_number": inv_id,
+                "date": self._gen_date(month_range=(2, 7)),
+                "po_reference": po_id,
+                "vendor": po_summary["vendor"],
+                "buyer": buyer.name,
+                "total": round(amount * self.rng.uniform(0.98, 1.08), 2),
+                "relevance_flag": "distractor",
+            }
+            distractor_pos.append(po_summary)
+            distractor_invoices.append(inv_summary)
+
+            docs[po_id] = (
+                f"PURCHASE ORDER (DISTRACTOR)\n"
+                f"PO Number: {po_id}\n"
+                f"Vendor: {po_summary['vendor']}\n"
+                f"Buyer: {buyer.name}\n"
+                f"Total: ${amount:,.2f}\n"
+                f"NOTE: Unrelated procurement record present in enterprise backlog."
+            )
+            docs[inv_id] = (
+                f"INVOICE (DISTRACTOR)\n"
+                f"Invoice Number: {inv_id}\n"
+                f"PO Reference: {po_id}\n"
+                f"Vendor: {po_summary['vendor']}\n"
+                f"Total Due: ${inv_summary['total']:,.2f}\n"
+                f"NOTE: This invoice does not correspond to the active audit dispute."
+            )
+
+        return distractor_pos, distractor_invoices, docs
 
     # ------------------------------------------------------------------
     # Task 1: Easy — Procurement Reconciliation
@@ -294,6 +354,13 @@ class ProceduralEngine:
         correct_total = discrepant.contracted_total
         overcharge = round(discrepant.invoiced_total - correct_total, 2)
 
+        distractor_count = self.rng.randint(1, 2)
+        distractor_pos, distractor_invoices, distractor_docs = self._gen_distractor_docs(
+            buyer=buyer,
+            vendor=vendor,
+            count=distractor_count,
+        )
+
         return Scenario(
             task_name="procurement_reconciliation",
             seed=self.seed,
@@ -302,6 +369,9 @@ class ProceduralEngine:
             correct_adjustment=-overcharge,  # negative = reduce invoice
             discrepant_line_item_id=discrepant.item_id,
             correct_line_item_price=correct_total,
+            distractor_purchase_orders=distractor_pos,
+            distractor_invoices=distractor_invoices,
+            distractor_documents=distractor_docs,
         )
 
     # ------------------------------------------------------------------

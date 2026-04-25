@@ -61,6 +61,7 @@ class ESCTREnvironment:
         self._settlement_offered = False
         self._settlement_rejected = False
         self._cited_evidence = False
+        self._action_trace: list[dict[str, Any]] = []
 
     def reset(
         self,
@@ -94,6 +95,7 @@ class ESCTREnvironment:
         self._settlement_offered = False
         self._settlement_rejected = False
         self._cited_evidence = False
+        self._action_trace = []
 
         tools = TASK_TOOLS.get(task_name, [])
         tables = AVAILABLE_TABLES.get(task_name, [])
@@ -195,6 +197,19 @@ class ESCTREnvironment:
             )
 
         # Dispatch
+        self._action_trace.append(
+            {
+                "step": self._state.step_count,
+                "tool": action.action_type,
+                "args": {
+                    "query_parameters": action.query_parameters,
+                    "document_id": action.document_id,
+                    "message_content": action.message_content,
+                    "adjustment_amount": action.adjustment_amount,
+                    "adjustment_reason": action.adjustment_reason,
+                },
+            }
+        )
         if action.action_type == "query_database":
             return self._handle_query(action)
         elif action.action_type == "read_document":
@@ -233,14 +248,25 @@ class ESCTREnvironment:
         if table == "purchase_orders":
             self._add_milestone("retrieved_po")
             po = scenario.purchase_order
+            distractors = scenario.distractor_purchase_orders or []
             summary = (
-                f"Query result: 1 record found in purchase_orders\n\n"
-                f"PO Number: {po.po_number}\n"
+                f"Query result: {1 + len(distractors)} records found in purchase_orders\n\n"
+                f"[PRIMARY] PO Number: {po.po_number}\n"
                 f"Date: {po.date}\n"
                 f"Vendor: {po.vendor.name}\n"
                 f"Buyer: {po.buyer.name}\n"
                 f"Total: ${po.total_amount:,.2f}\n"
-                f"Items: {len(po.line_items)}\n\n"
+                f"Items: {len(po.line_items)}\n"
+            )
+            if distractors:
+                summary += "\nPossible distractor records:\n"
+                for row in distractors:
+                    summary += (
+                        f"- {row['po_number']} | Vendor: {row['vendor']} | "
+                        f"Total: ${row['total_amount']:,.2f}\n"
+                    )
+            summary += (
+                "\n"
                 f"Use read_document with document_id='{po.po_number}' for full details."
             )
             return self._success_obs(summary)
@@ -248,15 +274,26 @@ class ESCTREnvironment:
         elif table == "invoices":
             self._add_milestone("retrieved_invoice")
             inv = scenario.invoice
+            distractors = scenario.distractor_invoices or []
             summary = (
-                f"Query result: 1 record found in invoices\n\n"
-                f"Invoice: {inv.invoice_number}\n"
+                f"Query result: {1 + len(distractors)} records found in invoices\n\n"
+                f"[PRIMARY] Invoice: {inv.invoice_number}\n"
                 f"Date: {inv.date}\n"
                 f"PO Ref: {inv.po_reference}\n"
                 f"Vendor: {inv.vendor.name}\n"
                 f"Subtotal: ${inv.subtotal:,.2f}\n"
                 f"Tax: ${inv.tax_amount:,.2f}\n"
-                f"Total: ${inv.total:,.2f}\n\n"
+                f"Total: ${inv.total:,.2f}\n"
+            )
+            if distractors:
+                summary += "\nPossible distractor records:\n"
+                for row in distractors:
+                    summary += (
+                        f"- {row['invoice_number']} | PO Ref: {row['po_reference']} | "
+                        f"Vendor: {row['vendor']} | Total: ${row['total']:,.2f}\n"
+                    )
+            summary += (
+                "\n"
                 f"Use read_document with document_id='{inv.invoice_number}' for full details."
             )
             return self._success_obs(summary)
@@ -345,6 +382,9 @@ class ESCTREnvironment:
         elif scenario.shipping_log and doc_id == scenario.shipping_log.tracking_id:
             self._add_milestone("retrieved_shipping")
             return self._success_obs(render_shipping_log(scenario.shipping_log))
+
+        elif scenario.distractor_documents and doc_id in scenario.distractor_documents:
+            return self._success_obs(scenario.distractor_documents[doc_id])
 
         else:
             self._trajectory_reward -= HALLUCINATION_PENALTY
@@ -472,6 +512,8 @@ class ESCTREnvironment:
 
         self._state.best_score = score
         self._state.accumulated_reward += score
+        feedback["action_trace"] = self._action_trace
+        feedback["action_graph_mermaid"] = self._build_action_graph_mermaid()
 
         response = (
             f"=== FINANCIAL DECISION PROCESSED ===\n\n"
@@ -545,9 +587,31 @@ class ESCTREnvironment:
             available_tools=TASK_TOOLS.get(self._state.task_name, []),
         )
 
+    def _build_action_graph_mermaid(self) -> str:
+        """Render current action trace as a Mermaid flow graph."""
+        if not self._action_trace:
+            return "graph TD\n  S0([No actions recorded])"
+
+        lines = ["graph TD"]
+        lines.append("  START([Episode Start])")
+        previous = "START"
+        for i, row in enumerate(self._action_trace, start=1):
+            node = f"A{i}"
+            label = f"{row['step']}. {row['tool']}"
+            lines.append(f"  {node}[{label}]")
+            lines.append(f"  {previous} --> {node}")
+            previous = node
+        lines.append("  END([Episode End])")
+        lines.append(f"  {previous} --> END")
+        return "\n".join(lines)
+
     @property
     def state(self) -> ESCTRState:
         return self._state
 
     def close(self) -> None:
         self._initialized = False
+
+    @property
+    def action_trace(self) -> list[dict[str, Any]]:
+        return self._action_trace

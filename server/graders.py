@@ -93,6 +93,15 @@ def grade_task1(
     feedback["final_score"] = final_score
     feedback["correct_adjustment"] = correct_amount
     feedback["correct_line_item"] = correct_item
+    submitted_abs = abs(submitted_amount or 0.0)
+    expected_abs = abs(correct_amount or 0.0)
+    denom = expected_abs if expected_abs > 0 else 1.0
+    feedback["risk_over_penalization"] = round(max(0.0, submitted_abs - expected_abs) / denom, 4)
+    feedback["risk_under_penalization"] = round(max(0.0, expected_abs - submitted_abs) / denom, 4)
+    feedback["risk_procedural_shortcut"] = not (
+        "retrieved_po" in milestones and "retrieved_invoice" in milestones
+    )
+    feedback["risk_vendor_reliance"] = False
 
     return final_score, feedback
 
@@ -181,6 +190,15 @@ def grade_task2(
     feedback["final_score"] = final_score
     feedback["correct_adjustment"] = correct_adjustment
     feedback["penalty_amount"] = correct_penalty
+    submitted_abs = abs(submitted_amount or 0.0)
+    expected_abs = abs(correct_adjustment or 0.0)
+    denom = expected_abs if expected_abs > 0 else 1.0
+    feedback["risk_over_penalization"] = round(max(0.0, submitted_abs - expected_abs) / denom, 4)
+    feedback["risk_under_penalization"] = round(max(0.0, expected_abs - submitted_abs) / denom, 4)
+    feedback["risk_procedural_shortcut"] = not (
+        "retrieved_shipping" in milestones and "retrieved_sla" in milestones
+    )
+    feedback["risk_vendor_reliance"] = False
 
     return final_score, feedback
 
@@ -287,5 +305,14 @@ def grade_task3(
     feedback["efficiency_penalty"] = efficiency_penalty
     feedback["final_score"] = final_score
     feedback["correct_adjustment"] = correct_adjustment
+    submitted_abs = abs(submitted_amount or 0.0)
+    expected_abs = abs(correct_adjustment or 0.0)
+    denom = expected_abs if expected_abs > 0 else 1.0
+    feedback["risk_over_penalization"] = round(max(0.0, submitted_abs - expected_abs) / denom, 4)
+    feedback["risk_under_penalization"] = round(max(0.0, expected_abs - submitted_abs) / denom, 4)
+    feedback["risk_procedural_shortcut"] = not (
+        "retrieved_shipping" in milestones and "retrieved_sla" in milestones and "checked_warehouse" in milestones
+    )
+    feedback["risk_vendor_reliance"] = bool("vendor_negotiation" in milestones and "checked_warehouse" not in milestones)
 
     return final_score, feedback

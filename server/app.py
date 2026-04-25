@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional
 
 import gradio as gr
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -144,6 +145,34 @@ def create_app() -> FastAPI:
             ],
         }
 
+    @app.get("/trace")
+    def get_trace():
+        return {
+            "episode_id": _env.state.episode_id,
+            "task_name": _env.state.task_name,
+            "steps": _env.state.step_count,
+            "action_trace": _env.action_trace,
+        }
+
+    @app.get("/", response_class=HTMLResponse)
+    def root():
+        return """
+        <html>
+          <head><title>ESCTR Environment</title></head>
+          <body style="font-family: sans-serif; max-width: 880px; margin: 32px auto;">
+            <h1>ESCTR Environment</h1>
+            <p>OpenEnv-compatible financial auditing environment.</p>
+            <ul>
+              <li><a href="/demo" target="_blank">Interactive Demo (Gradio)</a></li>
+              <li><a href="/health" target="_blank">/health</a></li>
+              <li><a href="/schema" target="_blank">/schema</a></li>
+              <li><a href="/metadata" target="_blank">/metadata</a></li>
+              <li><a href="/trace" target="_blank">/trace</a></li>
+            </ul>
+          </body>
+        </html>
+        """
+
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
         await websocket.accept()
@@ -202,7 +231,7 @@ def create_app() -> FastAPI:
 
     # ── Mount Gradio UI ──────────────────────────────────────────────────
     gradio_app = build_gradio_app()
-    app = gr.mount_gradio_app(app, gradio_app, path="/")
+    app = gr.mount_gradio_app(app, gradio_app, path="/demo")
 
     return app
 

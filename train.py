@@ -63,7 +63,11 @@ You have access to the following tools. Call them to interact with the ERP syste
 # ---------------------------------------------------------------------------
 
 # Task to train on — start with the easiest task for stable training
-TRAIN_TASK = os.environ.get("ESCTR_TASK", "procurement_reconciliation")
+TRAIN_TASKS = [
+    t.strip()
+    for t in os.environ.get("ESCTR_TASKS", os.environ.get("ESCTR_TASK", "procurement_reconciliation")).split(",")
+    if t.strip()
+]
 
 
 class ESCTRToolEnv:
@@ -77,11 +81,14 @@ class ESCTRToolEnv:
         self.env = ESCTREnvironment()
         self.reward = 0.0
         self.done = False
-        self._task = TRAIN_TASK
+        self._tasks = TRAIN_TASKS or ["procurement_reconciliation"]
+        self._task = self._tasks[0]
 
     def reset(self, **kwargs) -> str | None:
         """Reset the environment and return the initial briefing."""
         seed = random.randint(0, 100_000)
+        # Simple curriculum: sample tasks from configured task pool.
+        self._task = random.choice(self._tasks)
         obs = self.env.reset(
             task_name=self._task,
             seed=seed,
@@ -260,7 +267,7 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"ESCTR Training — {model_name}")
-    print(f"Task: {TRAIN_TASK}")
+    print(f"Tasks: {', '.join(TRAIN_TASKS)}")
     print(f"Episodes: {num_episodes}")
     print(f"Output: {output_dir}")
     print(f"{'='*60}\n")

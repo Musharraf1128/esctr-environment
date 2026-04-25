@@ -94,6 +94,18 @@ R_total = α·R_outcome + β·R_trajectory − penalties
 | **Gullibility penalty** | -0.20 | Accepting adversarial settlement offers (Task 3) |
 | **Evidence bonus** | +0.05 | Citing warehouse logs as evidence (Task 3) |
 
+### Submission-Grade Extensions (Final Iteration)
+
+To increase novelty and robustness for judging, ESCTR now includes three high-impact mechanics:
+
+1. **Dynamic distractors**: `query_database` now returns plausible-but-irrelevant PO/invoice records. Agents must disambiguate by evidence, not template matching.
+2. **Risk scorecard metrics**: deterministic risk telemetry is emitted per episode:
+   - `risk_over_penalization`
+   - `risk_under_penalization`
+   - `risk_procedural_shortcut`
+   - `risk_vendor_reliance`
+3. **Auditable action graphs**: every episode captures tool-call trace and emits a Mermaid-compatible DAG in final metadata (`action_graph_mermaid`), enabling judge-friendly reasoning-path inspection.
+
 ### Why This Reward Design Matters
 
 - **Dense, not sparse**: Trajectory milestones reward correct investigative behavior (querying the right databases, reading the right documents) even if the final answer is wrong — following Agent-RLVR's guidance signal approach
@@ -202,6 +214,14 @@ export HF_TOKEN="your_token"
 python inference.py
 ```
 
+### Run ambitious GRPO training (multi-task capable)
+```bash
+export ESCTR_MODEL="Qwen/Qwen3-1.7B"
+export ESCTR_EPISODES=1000
+export ESCTR_TASKS="procurement_reconciliation,sla_enforcement,adversarial_auditing"
+python train.py
+```
+
 ## Why This Matters
 
 | Question | Answer |
@@ -232,10 +252,13 @@ The baseline model jumps to a decision with no investigation, while the trained 
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
+| `/` | GET | Landing page with demo/API links |
+| `/demo` | GET | Interactive Gradio demo |
 | `/health` | GET | Health check |
 | `/reset` | POST | Reset with task + seed |
 | `/step` | POST | Execute an action |
 | `/state` | GET | Current state |
+| `/trace` | GET | Current episode action trace (auditable tool log) |
 | `/schema` | GET | Action/Observation/State schemas |
 | `/metadata` | GET | Environment metadata |
 | `/ws` | WebSocket | Persistent session |
@@ -275,7 +298,7 @@ The baseline model jumps to a decision with no investigation, while the trained 
 - **Model scale**: Training on 0.6B showed tool mastery but not arithmetic reasoning; we predict 3B+ models will break through the 0.30 reward plateau to capture outcome rewards
 - **Single-task**: Current training focuses on Task 1 (Procurement Reconciliation); extending to SLA Enforcement and Adversarial Auditing requires curriculum-based training
 - **Vendor agent**: The adversarial vendor follows rule-based policies; replacing with a second LLM (à la MultiAgentBench/TAMAS) would create a truly competitive multi-agent dynamic
-- **Risk metrics**: Following Chen et al. (2025), adding explicit over/under-penalization tracking would strengthen compliance evaluation
+- **Scale + ablations**: Full multi-task GRPO with larger models and ablation studies (with/without distractors/risk shaping) remain future work
 
 ## References
 
