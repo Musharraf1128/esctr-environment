@@ -191,7 +191,7 @@ def main():
     # ── User-configurable via env vars ────────────────────────────────────
     model_name = os.environ.get("ESCTR_MODEL", "Qwen/Qwen3-4B")
     num_episodes = int(os.environ.get("ESCTR_EPISODES", "300"))
-    max_len = int(os.environ.get("ESCTR_MAX_COMPLETION_LENGTH", "512"))
+    max_len = int(os.environ.get("ESCTR_MAX_COMPLETION_LENGTH", "1024"))
     lora_r = int(os.environ.get("ESCTR_LORA_R", "16"))
     grad_accum = int(os.environ.get("ESCTR_GRAD_ACCUM", "4"))
 
@@ -260,6 +260,10 @@ def main():
         max_completion_length=max_len,
         log_completions=True,
         num_completions_to_print=1,
+
+        # CRITICAL for Qwen3: disable thinking mode or it burns all tokens
+        # on <think>...</think> blocks and never makes tool calls
+        chat_template_kwargs={"enable_thinking": False},
 
         # Memory
         gradient_checkpointing=True,
