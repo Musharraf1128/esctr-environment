@@ -28,3 +28,21 @@
 - [ ] Run one full `inference.py` pass against deployed environment
 - [ ] Ensure README links include Space + training dashboard + storytelling artifact (slides/video/blog)
 - [ ] Freeze final commit and avoid post-deadline changes
+
+## Submission Lock Commands
+
+```bash
+# 1) Space endpoint checks
+curl -s -o /tmp/esctr_health.json -w "%{http_code}\n" https://musharraf7-esctr-environment.hf.space/health
+curl -s -o /tmp/esctr_reset.json -w "%{http_code}\n" -X POST -H "Content-Type: application/json" \
+  -d '{"task_name":"procurement_reconciliation","seed":42}' https://musharraf7-esctr-environment.hf.space/reset
+curl -s -o /tmp/esctr_demo.html -w "%{http_code}\n" https://musharraf7-esctr-environment.hf.space/demo
+
+# 2) Baseline run against deployed space
+export ENV_URL="https://musharraf7-esctr-environment.hf.space"
+python inference.py
+
+# 3) Optional artifact regeneration
+python ablation.py
+python generate_demo_artifacts.py
+```

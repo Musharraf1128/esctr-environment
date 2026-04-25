@@ -222,6 +222,35 @@ export ESCTR_TASKS="procurement_reconciliation,sla_enforcement,adversarial_audit
 python train.py
 ```
 
+### Run bigger-model training (Round 2 push)
+```bash
+export ESCTR_MODEL="Qwen/Qwen3-4B"
+export ESCTR_EPISODES=1500
+export ESCTR_TASKS="procurement_reconciliation,sla_enforcement,adversarial_auditing"
+python train.py
+```
+
+### Run ablations (base vs distractors vs risk shaping)
+```bash
+python ablation.py
+# writes artifacts/ablation_results.json
+```
+
+### Generate judge demo artifacts
+```bash
+python generate_demo_artifacts.py
+# writes artifacts/demo_episode_trace.json + artifacts/demo_action_graph.mmd
+```
+
+## Round 2 Storytelling Artifacts (Submission Links)
+
+- Slide deck: `TODO_ADD_SLIDES_URL`
+- Demo video (<2 min): `TODO_ADD_VIDEO_URL`
+- Blog / writeup: `TODO_ADD_BLOG_URL`
+- Baseline vs trained episode trace: `artifacts/demo_episode_trace.json`
+- Action graph (Mermaid): `artifacts/demo_action_graph.mmd`
+- Ablation output: `artifacts/ablation_results.json`
+
 ## Why This Matters
 
 | Question | Answer |
@@ -297,7 +326,7 @@ The baseline model jumps to a decision with no investigation, while the trained 
 
 - **Model scale**: Training on 0.6B showed tool mastery but not arithmetic reasoning; we predict 3B+ models will break through the 0.30 reward plateau to capture outcome rewards
 - **Single-task**: Current training focuses on Task 1 (Procurement Reconciliation); extending to SLA Enforcement and Adversarial Auditing requires curriculum-based training
-- **Vendor agent**: The adversarial vendor follows rule-based policies; replacing with a second LLM (à la MultiAgentBench/TAMAS) would create a truly competitive multi-agent dynamic
+- **Vendor policy realism**: Current vendor profiles are rule-based; replacing with a second LLM (à la MultiAgentBench/TAMAS) would create a fully strategic multi-agent dynamic
 - **Scale + ablations**: Full multi-task GRPO with larger models and ablation studies (with/without distractors/risk shaping) remain future work
 
 ## References

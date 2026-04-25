@@ -192,6 +192,8 @@ class Scenario:
     distractor_purchase_orders: Optional[List[Dict[str, Any]]] = None
     distractor_invoices: Optional[List[Dict[str, Any]]] = None
     distractor_documents: Optional[Dict[str, str]] = None
+    vendor_honesty_profile: str = "adversarial"
+    vendor_honesty_score: float = 0.2
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +232,16 @@ class ProceduralEngine:
 
     def _gen_tracking_id(self) -> str:
         return f"TRK-{self.rng.randint(10000, 99999)}"
+
+    def _pick_vendor_profile(self) -> Tuple[str, float]:
+        """Select deterministic vendor honesty profile for adversarial task."""
+        profile_pool = [
+            ("hardball", 0.10),      # mostly deceptive, pushes settlement aggressively
+            ("adversarial", 0.20),   # deceptive baseline
+            ("deflective", 0.35),    # mixes excuses and partial facts
+            ("selectively_honest", 0.50),  # occasionally concedes verifiable points
+        ]
+        return self._pick(profile_pool)
 
     def _gen_distractor_docs(
         self,
@@ -477,6 +489,9 @@ class ProceduralEngine:
         scenario.task_name = "adversarial_auditing"
         scenario.warehouse_logs = warehouse_logs
         scenario.vendor_claim_valid = False  # vendor's claim is always invalid in this task
+        profile, honesty = self._pick_vendor_profile()
+        scenario.vendor_honesty_profile = profile
+        scenario.vendor_honesty_score = honesty
 
         return scenario
 

@@ -1,0 +1,29 @@
+[
+  {
+    "variant": "base_env",
+    "episodes": 30,
+    "mean_reward": 0.3,
+    "mean_over_penalization_risk": 0.0,
+    "mean_under_penalization_risk": 0.1,
+    "procedural_shortcut_rate": 0.0,
+    "vendor_reliance_rate": 0.0
+  },
+  {
+    "variant": "distractors_only",
+    "episodes": 30,
+    "mean_reward": 0.3,
+    "mean_over_penalization_risk": 0.0,
+    "mean_under_penalization_risk": 0.1,
+    "procedural_shortcut_rate": 0.0,
+    "vendor_reliance_rate": 0.0
+  },
+  {
+    "variant": "distractors_risk_shaping",
+    "episodes": 30,
+    "mean_reward": 0.296,
+    "mean_over_penalization_risk": 0.0,
+    "mean_under_penalization_risk": 0.1,
+    "procedural_shortcut_rate": 0.0,
+    "vendor_reliance_rate": 0.0
+  }
+]

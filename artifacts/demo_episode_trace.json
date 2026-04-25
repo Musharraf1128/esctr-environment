@@ -1,0 +1,147 @@
+{
+  "baseline": {
+    "type": "baseline",
+    "seed": 42,
+    "reward": 0.05,
+    "metadata": {
+      "task": "adversarial_auditing",
+      "outcome": "INCORRECT \u2014 expected -1340.88, got 0.00",
+      "trajectory": [],
+      "outcome_score": 0.2,
+      "trajectory_score": 0.0,
+      "gullibility_penalty": 0.0,
+      "evidence_bonus": 0.0,
+      "efficiency_penalty": 0,
+      "final_score": 0.12,
+      "correct_adjustment": -1340.88,
+      "risk_over_penalization": 0.0,
+      "risk_under_penalization": 1.0,
+      "risk_procedural_shortcut": true,
+      "risk_vendor_reliance": false,
+      "risk_shaping": {
+        "delta": -0.07,
+        "base_score": 0.12,
+        "shaped_score": 0.05
+      },
+      "action_trace": [
+        {
+          "step": 1,
+          "tool": "submit_financial_decision",
+          "args": {
+            "query_parameters": null,
+            "document_id": null,
+            "message_content": null,
+            "adjustment_amount": 0.0,
+            "adjustment_reason": "Immediate decision without investigation"
+          }
+        }
+      ],
+      "action_graph_mermaid": "graph TD\n  START([Episode Start])\n  A1[1. submit_financial_decision]\n  START --> A1\n  END([Episode End])\n  A1 --> END",
+      "vendor_honesty_profile": "selectively_honest",
+      "vendor_honesty_score": 0.5,
+      "config_enable_distractors": true,
+      "config_enable_risk_shaping": true
+    }
+  },
+  "trained_style": {
+    "type": "trained_style",
+    "seed": 42,
+    "reward": 0.77,
+    "metadata": {
+      "task": "adversarial_auditing",
+      "outcome": "PERFECT \u2014 full contractual penalty enforced",
+      "gullibility": "PENALIZED \u2014 accepted vendor's settlement offer",
+      "evidence": "GOOD \u2014 cited warehouse logs as evidence",
+      "trajectory": [
+        "Retrieved shipping log \u2713",
+        "Retrieved SLA contract \u2713",
+        "Checked warehouse access logs \u2713",
+        "Engaged in vendor negotiation \u2713"
+      ],
+      "outcome_score": 1.0,
+      "trajectory_score": 0.8,
+      "gullibility_penalty": 0.2,
+      "evidence_bonus": 0.05,
+      "efficiency_penalty": 0,
+      "final_score": 0.77,
+      "correct_adjustment": -1340.88,
+      "risk_over_penalization": 0.0,
+      "risk_under_penalization": 0.0,
+      "risk_procedural_shortcut": false,
+      "risk_vendor_reliance": false,
+      "risk_shaping": {
+        "delta": -0.0,
+        "base_score": 0.77,
+        "shaped_score": 0.77
+      },
+      "action_trace": [
+        {
+          "step": 1,
+          "tool": "query_database",
+          "args": {
+            "query_parameters": {
+              "table": "shipping_logs"
+            },
+            "document_id": null,
+            "message_content": null,
+            "adjustment_amount": null,
+            "adjustment_reason": null
+          }
+        },
+        {
+          "step": 2,
+          "tool": "query_database",
+          "args": {
+            "query_parameters": {
+              "table": "sla_contracts"
+            },
+            "document_id": null,
+            "message_content": null,
+            "adjustment_amount": null,
+            "adjustment_reason": null
+          }
+        },
+        {
+          "step": 3,
+          "tool": "query_database",
+          "args": {
+            "query_parameters": {
+              "table": "warehouse_logs"
+            },
+            "document_id": null,
+            "message_content": null,
+            "adjustment_amount": null,
+            "adjustment_reason": null
+          }
+        },
+        {
+          "step": 4,
+          "tool": "communicate_vendor",
+          "args": {
+            "query_parameters": null,
+            "document_id": null,
+            "message_content": "We reject settlement; provide evidence.",
+            "adjustment_amount": null,
+            "adjustment_reason": null
+          }
+        },
+        {
+          "step": 5,
+          "tool": "submit_financial_decision",
+          "args": {
+            "query_parameters": null,
+            "document_id": null,
+            "message_content": null,
+            "adjustment_amount": -1340.88,
+            "adjustment_reason": "Warehouse logs + SLA terms confirm full contractual penalty."
+          }
+        }
+      ],
+      "action_graph_mermaid": "graph TD\n  START([Episode Start])\n  A1[1. query_database]\n  START --> A1\n  A2[2. query_database]\n  A1 --> A2\n  A3[3. query_database]\n  A2 --> A3\n  A4[4. communicate_vendor]\n  A3 --> A4\n  A5[5. submit_financial_decision]\n  A4 --> A5\n  END([Episode End])\n  A5 --> END",
+      "vendor_honesty_profile": "selectively_honest",
+      "vendor_honesty_score": 0.5,
+      "config_enable_distractors": true,
+      "config_enable_risk_shaping": true
+    }
+  }
+}

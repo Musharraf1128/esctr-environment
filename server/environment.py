@@ -11,6 +11,7 @@ Reward Architecture:
 """
 
 import json
+import os
 from dataclasses import asdict
 from typing import Any, Optional
 from uuid import uuid4
@@ -62,6 +63,8 @@ class ESCTREnvironment:
         self._settlement_rejected = False
         self._cited_evidence = False
         self._action_trace: list[dict[str, Any]] = []
+        self._enable_distractors = os.environ.get("ESCTR_ENABLE_DISTRACTORS", "1") != "0"
+        self._enable_risk_shaping = os.environ.get("ESCTR_ENABLE_RISK_SHAPING", "1") != "0"
 
     def reset(
         self,
@@ -248,7 +251,7 @@ class ESCTREnvironment:
         if table == "purchase_orders":
             self._add_milestone("retrieved_po")
             po = scenario.purchase_order
-            distractors = scenario.distractor_purchase_orders or []
+            distractors = (scenario.distractor_purchase_orders or []) if self._enable_distractors else []
             summary = (
                 f"Query result: {1 + len(distractors)} records found in purchase_orders\n\n"
                 f"[PRIMARY] PO Number: {po.po_number}\n"
@@ -274,7 +277,7 @@ class ESCTREnvironment:
         elif table == "invoices":
             self._add_milestone("retrieved_invoice")
             inv = scenario.invoice
-            distractors = scenario.distractor_invoices or []
+            distractors = (scenario.distractor_invoices or []) if self._enable_distractors else []
             summary = (
                 f"Query result: {1 + len(distractors)} records found in invoices\n\n"
                 f"[PRIMARY] Invoice: {inv.invoice_number}\n"
@@ -383,7 +386,7 @@ class ESCTREnvironment:
             self._add_milestone("retrieved_shipping")
             return self._success_obs(render_shipping_log(scenario.shipping_log))
 
-        elif scenario.distractor_documents and doc_id in scenario.distractor_documents:
+        elif self._enable_distractors and scenario.distractor_documents and doc_id in scenario.distractor_documents:
             return self._success_obs(scenario.distractor_documents[doc_id])
 
         else:
@@ -399,14 +402,33 @@ class ESCTREnvironment:
         scenario = self._scenario
         import random as _rng
         _rng.seed(self._state.seed + self._vendor_negotiation_count)
+        profile = scenario.vendor_honesty_profile or "adversarial"
 
         if self._vendor_negotiation_count == 1:
             # First contact: vendor makes their excuse
-            excuse = _rng.choice([
-                "Our records indicate the receiving warehouse rejected the initial delivery attempt due to dock unavailability.",
-                "We believe the shipment arrived on time but was misrouted by your internal receiving department.",
-                "Our carrier has confirmed timely delivery; any apparent delay is a systems error on your end.",
-            ])
+            excuse_pool = {
+                "hardball": [
+                    "Our legal review confirms no SLA breach occurred and your claim is invalid.",
+                    "Your receiving team rejected delivery; the delay is entirely on your side.",
+                    "We will dispute any deduction as non-compliant with contract terms.",
+                ],
+                "adversarial": [
+                    "Our records indicate the receiving warehouse rejected the initial delivery attempt due to dock unavailability.",
+                    "We believe the shipment arrived on time but was misrouted by your internal receiving department.",
+                    "Our carrier has confirmed timely delivery; any apparent delay is a systems error on your end.",
+                ],
+                "deflective": [
+                    "The carrier reported unexpected routing issues, and we are still reviewing fault allocation.",
+                    "We acknowledge timeline concerns but dispute direct responsibility for the full delay.",
+                    "Some delay may have occurred, but warehouse-side handling likely contributed.",
+                ],
+                "selectively_honest": [
+                    "We acknowledge there was a delay in final delivery confirmation.",
+                    "Delay occurred, but we request a partial waiver due to carrier-side disruptions.",
+                    "We can discuss a reduced penalty while preserving our commercial relationship.",
+                ],
+            }
+            excuse = _rng.choice(excuse_pool.get(profile, excuse_pool["adversarial"]))
             response = (
                 f"VENDOR RESPONSE ({scenario.vendor.name}):\n\n"
                 f"\"{excuse}\"\n\n"
@@ -416,7 +438,13 @@ class ESCTREnvironment:
         elif self._vendor_negotiation_count == 2:
             # Second contact: vendor offers settlement
             self._settlement_offered = True
-            pct = _rng.choice([40, 45, 50, 55])
+            settlement_by_profile = {
+                "hardball": [20, 25, 30, 35],
+                "adversarial": [40, 45, 50, 55],
+                "deflective": [50, 55, 60, 65],
+                "selectively_honest": [60, 65, 70, 75],
+            }
+            pct = _rng.choice(settlement_by_profile.get(profile, [40, 45, 50, 55]))
             penalty = scenario.penalty_amount or 0
             settlement = round(penalty * (pct / 100.0), 2)
             response = (
@@ -434,12 +462,14 @@ class ESCTREnvironment:
                 response = (
                     f"VENDOR RESPONSE ({scenario.vendor.name}):\n\n"
                     f"\"We acknowledge your position. If you have documentary evidence supporting "
-                    f"the penalty, please proceed with the full adjustment.\""
+                    f"the penalty, please proceed with the full adjustment. "
+                    f"(profile={profile})\""
                 )
             else:
                 response = (
                     f"VENDOR RESPONSE ({scenario.vendor.name}):\n\n"
-                    f"\"We maintain our position. Please review the evidence and respond accordingly.\""
+                    f"\"We maintain our position. Please review the evidence and respond accordingly. "
+                    f"(profile={profile})\""
                 )
 
         return self._success_obs(response)
@@ -511,9 +541,15 @@ class ESCTREnvironment:
             feedback = {"error": "Unknown task"}
 
         self._state.best_score = score
+        score, shaping = self._apply_risk_shaping(score, feedback)
+        feedback["risk_shaping"] = shaping
         self._state.accumulated_reward += score
         feedback["action_trace"] = self._action_trace
         feedback["action_graph_mermaid"] = self._build_action_graph_mermaid()
+        feedback["vendor_honesty_profile"] = scenario.vendor_honesty_profile
+        feedback["vendor_honesty_score"] = scenario.vendor_honesty_score
+        feedback["config_enable_distractors"] = self._enable_distractors
+        feedback["config_enable_risk_shaping"] = self._enable_risk_shaping
 
         response = (
             f"=== FINANCIAL DECISION PROCESSED ===\n\n"
@@ -604,6 +640,21 @@ class ESCTREnvironment:
         lines.append("  END([Episode End])")
         lines.append(f"  {previous} --> END")
         return "\n".join(lines)
+
+    def _apply_risk_shaping(self, base_score: float, feedback: dict[str, Any]) -> tuple[float, dict[str, float]]:
+        """Apply deterministic risk-based shaping for ablation-ready reward studies."""
+        if not self._enable_risk_shaping:
+            return base_score, {"delta": 0.0}
+
+        over = float(feedback.get("risk_over_penalization", 0.0) or 0.0)
+        under = float(feedback.get("risk_under_penalization", 0.0) or 0.0)
+        shortcut = 1.0 if feedback.get("risk_procedural_shortcut", False) else 0.0
+        reliance = 1.0 if feedback.get("risk_vendor_reliance", False) else 0.0
+
+        # Small coefficients preserve core task signal while discouraging risky behavior.
+        delta = -(0.04 * over) - (0.04 * under) - (0.03 * shortcut) - (0.02 * reliance)
+        shaped = max(0.01, min(0.99, round(base_score + delta, 4)))
+        return shaped, {"delta": round(delta, 4), "base_score": round(base_score, 4), "shaped_score": shaped}
 
     @property
     def state(self) -> ESCTRState:

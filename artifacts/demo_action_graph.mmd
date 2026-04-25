@@ -1,0 +1,14 @@
+graph TD
+  START([Episode Start])
+  A1[1. query_database]
+  START --> A1
+  A2[2. query_database]
+  A1 --> A2
+  A3[3. query_database]
+  A2 --> A3
+  A4[4. communicate_vendor]
+  A3 --> A4
+  A5[5. submit_financial_decision]
+  A4 --> A5
+  END([Episode End])
+  A5 --> END
