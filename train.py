@@ -19,6 +19,8 @@ import random
 import sys
 import os
 
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 from datasets import Dataset
 from trl import GRPOConfig, GRPOTrainer
 
@@ -208,7 +210,7 @@ def main():
         # Training schedule
         num_train_epochs=1,
         learning_rate=1e-6,
-        gradient_accumulation_steps=16,
+        gradient_accumulation_steps=4,
         per_device_train_batch_size=1,
         warmup_steps=10,
         optim="adamw_torch",
@@ -216,7 +218,7 @@ def main():
 
         # GRPO settings
         num_generations=2,
-        max_completion_length=2048,
+        max_completion_length=768,
         log_completions=True,
         num_completions_to_print=2,
         chat_template_kwargs={"enable_thinking": False},
