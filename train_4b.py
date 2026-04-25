@@ -27,12 +27,14 @@ import time
 # ── Memory + cache config (must be set BEFORE any torch import) ───────────
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
-# Redirect HF + torch caches to /workspace to avoid filling the container disk
-if os.path.isdir("/workspace"):
-    os.environ.setdefault("HF_HOME", "/workspace/hf_cache")
-    os.environ.setdefault("TORCH_HOME", "/workspace/torch_cache")
-    os.makedirs(os.environ["HF_HOME"], exist_ok=True)
-    os.makedirs(os.environ["TORCH_HOME"], exist_ok=True)
+# Redirect HF + torch caches to the CONTAINER DISK (not /workspace volume,
+# which is often only 5 GB on RunPod — too small for 4B model weights).
+# The container disk is typically 50 GB at /.
+cache_root = "/root" if os.path.isdir("/root") else "."
+os.environ.setdefault("HF_HOME", os.path.join(cache_root, "hf_cache"))
+os.environ.setdefault("TORCH_HOME", os.path.join(cache_root, "torch_cache"))
+os.makedirs(os.environ["HF_HOME"], exist_ok=True)
+os.makedirs(os.environ["TORCH_HOME"], exist_ok=True)
 
 import torch
 from datasets import Dataset
@@ -193,8 +195,8 @@ def main():
     lora_r = int(os.environ.get("ESCTR_LORA_R", "16"))
     grad_accum = int(os.environ.get("ESCTR_GRAD_ACCUM", "4"))
 
-    # Output goes to /workspace on RunPod so it persists across restarts
-    default_out = "/workspace/esctr-4b-lora" if os.path.isdir("/workspace") else "./esctr-4b-lora"
+    # Output goes to container disk (not /workspace which may be tiny)
+    default_out = "/root/esctr-4b-lora" if os.path.isdir("/root") else "./esctr-4b-lora"
     output_dir = os.environ.get("ESCTR_OUTPUT", default_out)
     os.makedirs(output_dir, exist_ok=True)
 
