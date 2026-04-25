@@ -255,9 +255,12 @@ def main():
         per_device_train_batch_size=1,
         gradient_accumulation_steps=grad_accum,
 
-        # GRPO
-        num_generations=2,           # K=2 rollouts per prompt (minimum for GRPO)
+        # GRPO — exploration is CRITICAL
+        # Without high temperature, Qwen3-4B collapses to entropy ~0.0005
+        # (deterministic) and both K rollouts get identical reward → zero gradient.
+        num_generations=4,           # K=4: more rollouts = more reward variance
         max_completion_length=max_len,
+        temperature=1.5,             # Force exploration (default 1.0 is too greedy for 4B)
         log_completions=True,
         num_completions_to_print=1,
 
