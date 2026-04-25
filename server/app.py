@@ -82,14 +82,7 @@ def create_app() -> FastAPI:
     def health():
         return HealthResponse()
 
-    @app.get("/")
-    def root():
-        return {
-            "name": "esctr_environment",
-            "version": "1.0.0",
-            "status": "running",
-            "endpoints": ["/health", "/reset", "/step", "/state", "/schema", "/metadata", "/ws"],
-        }
+
 
     @app.post("/reset")
     def reset(request: ResetRequest = ResetRequest()):
