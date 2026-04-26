@@ -1,9 +1,4 @@
-"""
-Interactive Gradio UI for the ESCTR Environment.
-
-Tabbed layout inspired by NetOps — clean, professional, information-dense.
-Tabs: Overview · Playground · Training · About
-"""
+"""Interactive Gradio UI for the ESCTR Environment."""
 
 import gradio as gr
 import random
@@ -11,110 +6,94 @@ from .environment import ESCTREnvironment
 from .models import ESCTRAction
 
 
-# ── Theming ──────────────────────────────────────────────────────────────────
-
-THEME = gr.themes.Soft(
-    primary_hue=gr.themes.colors.indigo,
-    secondary_hue=gr.themes.colors.emerald,
-    neutral_hue=gr.themes.colors.slate,
-    font=gr.themes.GoogleFont("Inter"),
-    font_mono=gr.themes.GoogleFont("JetBrains Mono"),
-)
+# ── Styling ──────────────────────────────────────────────────────────────────
 
 CSS = """
-/* ── Global ─────────────────────────────────────────────── */
+body, .gradio-container {
+    background: #e8f4f8 !important;
+    color: #2d3748 !important;
+    font-family: 'Times New Roman', Times, Georgia, serif !important;
+}
 .gradio-container {
-    background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 30%, #e0f2fe 60%, #ecfdf5 100%) !important;
-    max-width: 960px !important;
+    max-width: 1120px !important;
     margin: 0 auto !important;
 }
-.main-header {
-    text-align: center;
-    padding: 2rem 1rem 1rem;
-}
+footer, .built-with, .gradio-container > footer { display: none !important; }
+.main-header { text-align: center; padding: 1.5rem 1rem 0.8rem; }
 .main-header h1 {
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: #1e293b;
-    margin-bottom: 0.25rem;
-    letter-spacing: -0.02em;
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1a202c;
 }
 .main-header .subtitle {
-    font-size: 1.05rem;
-    color: #64748b;
+    margin-top: 0.35rem;
+    color: #5a6b7a;
     font-style: italic;
-    margin-bottom: 0.5rem;
+    font-size: 1rem;
 }
-.main-header .links {
-    font-size: 0.85rem;
-    color: #94a3b8;
-}
-.main-header .links a {
-    color: #6366f1;
-    text-decoration: none;
-    margin: 0 0.5rem;
-}
-.main-header .links a:hover {
-    text-decoration: underline;
-}
+.main-header .links { margin-top: 0.5rem; font-size: 0.88rem; color: #718096; }
+.main-header .links a { color: #3d4f5f; text-decoration: none; border-bottom: 1px dotted #8a9caa; }
+.main-header .links a:hover { opacity: 0.75; }
 
-/* ── Tabs ─────────────────────────────────────────────── */
-.tabs > .tab-nav {
+.tabs { border: none !important; background: transparent !important; }
+.tab-nav {
     justify-content: center !important;
-    border-bottom: none !important;
     gap: 0.25rem !important;
-    padding: 0.5rem 0 !important;
+    border: none !important;
+    background: transparent !important;
 }
-.tabs > .tab-nav > button {
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 6px !important;
-    padding: 0.5rem 1.25rem !important;
-    font-weight: 500 !important;
-    background: white !important;
-    color: #475569 !important;
-    font-size: 0.9rem !important;
+.tab-nav button {
+    border: 1px solid transparent !important;
+    background: none !important;
+    border-radius: 4px !important;
+    color: #2d3748 !important;
+    font-size: 0.92rem !important;
+    padding: 0.4rem 0.9rem !important;
 }
-.tabs > .tab-nav > button.selected {
-    border-color: #6366f1 !important;
-    color: #4f46e5 !important;
-    font-weight: 600 !important;
-    background: #eef2ff !important;
+.tab-nav button.selected {
+    border-color: #2d3748 !important;
+    color: #1a202c !important;
+    font-weight: 700 !important;
+}
+.tabitem, .tabitem > .column {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
-/* ── Content area ───────────────────────────────────── */
-.tab-content {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    margin: 0.5rem 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+.surface {
+    background: #f9fcfd;
+    border: 1px solid #d7e5ec;
+    border-radius: 8px;
+    padding: 1rem;
 }
-.prose { max-width: 720px; margin: 0 auto; line-height: 1.75; color: #334155; }
-.prose h2 { color: #1e293b; font-weight: 700; margin-top: 2rem; }
-.prose h3 { color: #334155; font-weight: 600; }
-.prose a { color: #6366f1; }
-.prose code { background: #f1f5f9; padding: 0.15em 0.35em; border-radius: 4px; font-size: 0.85em; }
+
+.prose { max-width: 760px; margin: 0 auto; line-height: 1.85; color: #374151; }
+.prose h2 { color: #1a202c; font-weight: 600; margin-top: 1.7rem; }
+.prose h3 { color: #2d3748; font-weight: 600; }
+.prose code {
+    background: #edf3f7;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-family: 'Courier New', Consolas, monospace !important;
+}
 .prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-.prose th { background: #f8fafc; text-align: left; padding: 0.6rem; border-bottom: 2px solid #e2e8f0; font-weight: 600; }
-.prose td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #f1f5f9; }
+.prose th, .prose td { border-bottom: 1px solid #dce7ee; padding: 0.5rem 0.45rem; text-align: left; }
+.prose th { color: #1a202c; font-weight: 600; }
 
-/* ── Playground ────────────────────────────────────── */
-.log-box textarea { font-family: 'JetBrains Mono', monospace !important; font-size: 0.82rem !important; }
-.reward-big { font-size: 2.5rem !important; font-weight: 800 !important; text-align: center !important; }
-.tool-btn { min-height: 44px !important; }
-
-/* ── Metric cards ──────────────────────────────────── */
-.metric-card {
-    background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-    border-radius: 12px;
-    padding: 1.25rem;
-    text-align: center;
+.log-box textarea {
+    font-family: 'Courier New', Consolas, monospace !important;
+    font-size: 0.8rem !important;
+    line-height: 1.55 !important;
 }
-.metric-card .value { font-size: 1.8rem; font-weight: 800; color: #4f46e5; }
-.metric-card .label { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
-
-/* ── Plot images ────────────────────────────────────── */
-.plot-img img { border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.reward-big textarea {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+}
+.tool-btn { min-height: 42px !important; }
+.plot-img img { border-radius: 6px; border: 1px solid #dbe7ee; }
 """
 
 
@@ -370,7 +349,7 @@ def submit_decision(env, log, step_count, amount, reason):
 PLOT_BASE = "https://raw.githubusercontent.com/Musharraf1128/esctr-environment/main/plots"
 
 def build_gradio_app():
-    with gr.Blocks(title="ESCTR Environment") as demo:
+    with gr.Blocks(title="ESCTR Environment", css=CSS) as demo:
 
         # Hidden state
         env_state = gr.State(None)
@@ -394,7 +373,7 @@ def build_gradio_app():
         with gr.Tabs():
 
             # ── Tab 1: Overview ───────────────────────────────
-            with gr.Tab("Overview"):
+            with gr.Tab("Readme"):
                 gr.HTML(OVERVIEW_MD)
 
             # ── Tab 2: Playground ─────────────────────────────
@@ -402,7 +381,7 @@ def build_gradio_app():
                 with gr.Row():
                     # Left: Controls
                     with gr.Column(scale=1):
-                        gr.Markdown("### 🎮 Episode Controls")
+                        gr.HTML('<div class="surface"><h3 style="margin-top:0;">Episode Controls</h3>')
 
                         task_dropdown = gr.Dropdown(
                             choices=[
@@ -419,9 +398,7 @@ def build_gradio_app():
                             value="",
                         )
                         reset_btn = gr.Button("🔄 Start New Episode", variant="primary", size="lg")
-
-                        gr.Markdown("---")
-                        gr.Markdown("### 🔧 Tools")
+                        gr.HTML('<div style="height:0.8rem;"></div><h3 style="margin:0.2rem 0 0.6rem 0;">Tools</h3>')
 
                         with gr.Accordion("📊 Query Database", open=True):
                             db_table = gr.Dropdown(
@@ -442,9 +419,11 @@ def build_gradio_app():
                             adj_amount = gr.Textbox(label="Adjustment ($)", placeholder="-450.00")
                             adj_reason = gr.Textbox(label="Reason", placeholder="Overcharge on line item...", lines=2)
                             submit_btn = gr.Button("Submit Decision", variant="stop", elem_classes="tool-btn")
+                        gr.HTML('</div>')
 
                     # Right: Log & Results
                     with gr.Column(scale=2):
+                        gr.HTML('<div class="surface">')
                         status_bar = gr.Textbox(label="Status", value="Click 'Start New Episode' to begin", interactive=False)
 
                         with gr.Row():
@@ -460,9 +439,10 @@ def build_gradio_app():
                             lines=22, max_lines=50,
                             interactive=False, elem_classes="log-box",
                         )
+                        gr.HTML('</div>')
 
             # ── Tab 3: Training ───────────────────────────────
-            with gr.Tab("Training"):
+            with gr.Tab("Logs"):
                 gr.HTML(TRAINING_MD)
 
                 gr.Markdown("### 📈 Training Plots")
@@ -504,7 +484,7 @@ def build_gradio_app():
                     )
 
             # ── Tab 4: About ─────────────────────────────────
-            with gr.Tab("About"):
+            with gr.Tab("Fleet"):
                 gr.HTML(ABOUT_MD)
 
         # ── Event Handlers ────────────────────────────────────
