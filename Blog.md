@@ -19,7 +19,6 @@ tags:
 That's what we built for the [OpenEnv Hackathon](https://github.com/meta-pytorch/OpenEnv). **ESCTR** (Enterprise Supply Chain & Tax Reconciliation) is a stateful environment where an LLM agent operates as a **financial controller**, navigating a multi-step audit pipeline with 4 ERP tools, adversarial vendors, and mathematically precise reward verification.
 
 🏢 **Environment**: [musharraf7/esctr-environment](https://huggingface.co/spaces/musharraf7/esctr-environment)
-🧠 **Trained Model**: [musharraf7/esctr-grpo-4b-lora](https://huggingface.co/musharraf7/esctr-grpo-4b-lora)
 📊 **Training Dashboard**: [Trackio](https://huggingface.co/spaces/musharraf7/esctr-grpo-trained)
 
 ---
@@ -176,9 +175,7 @@ We believe this is the kind of environment that pushes the frontier of what we c
 ## Links
 
 - 🏢 **Environment Space**: [musharraf7/esctr-environment](https://huggingface.co/spaces/musharraf7/esctr-environment)
-- 🧠 **Trained LoRA Weights**: [musharraf7/esctr-grpo-4b-lora](https://huggingface.co/musharraf7/esctr-grpo-4b-lora)
 - 📊 **Training Dashboard**: [Trackio Space](https://huggingface.co/spaces/musharraf7/esctr-grpo-trained)
-- 💻 **Source Code**: [GitHub](https://github.com/Musharraf1128/esctr-environment)
-- 🏋️ **Training Scripts**: [`train.py`](https://github.com/Musharraf1128/esctr-environment/blob/main/train.py) (0.6B) · [`train_4b.py`](https://github.com/Musharraf1128/esctr-environment/blob/main/train_4b.py) (4B)
+- 💻 **Source Code & Training Scripts**: [GitHub](https://github.com/Musharraf1128/esctr-environment)
 
 *Built for the [OpenEnv Hackathon](https://github.com/meta-pytorch/OpenEnv) by Musharraf Shah.*
