@@ -1515,7 +1515,7 @@ wheels = [
 ]
 
 [[package]]
-name = "openenv-invoice-extraction-env"
+name = "openenv-esctr-environment"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
