@@ -127,6 +127,10 @@ We scaled our training to **Qwen/Qwen3-4B** on a single **RTX 4090 (24GB VRAM)**
 3. **Flawless Tool Discipline**: The model completely suppressed its native free-text `<think>` behavior to conform to the strict JSON tool-call schema required by the ERP system, achieving **0 tool failures** over 300 episodes.
 4. **Reward Progression**: Mean episodic reward climbed consistently over the 71-minute run, peaking at **0.27** as the model learned to chain multiple `read_document` calls and successfully submit financial decisions.
 
+![4B Reward Curve](https://raw.githubusercontent.com/Musharraf1128/esctr-environment/main/plots/reward_curve_4b.png)
+
+![4B Tool Execution](https://raw.githubusercontent.com/Musharraf1128/esctr-environment/main/plots/tool_calls_4b.png)
+
 | Training Phase | Mean Reward | Peak Reward | Avg Tool Calls | Tool Failures |
 |----------------|-------------|-------------|----------------|---------------|
 | **First 20 Episodes** | 0.1769 | N/A | 3.5 | 0 |
