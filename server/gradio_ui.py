@@ -1,86 +1,103 @@
 """Interactive Gradio UI for the ESCTR Environment."""
 
-import gradio as gr
+from pathlib import Path
 import random
+
+import gradio as gr
+
 from .environment import ESCTREnvironment
 from .models import ESCTRAction
 
 
-# ── Styling ──────────────────────────────────────────────────────────────────
-
 CSS = """
 body, .gradio-container {
-    background: #e8f4f8 !important;
-    color: #2d3748 !important;
+    background-color: #e8f4f8 !important;
     font-family: 'Times New Roman', Times, Georgia, serif !important;
+    color: #2d3748 !important;
+    font-size: 18px !important;
 }
 .gradio-container {
     max-width: 1120px !important;
     margin: 0 auto !important;
 }
-footer, .built-with, .gradio-container > footer { display: none !important; }
-.main-header { text-align: center; padding: 1.5rem 1rem 0.8rem; }
+footer, .gradio-container > footer, .built-with { display: none !important; }
+
+.main-header {
+    text-align: center;
+    padding: 1rem 0.5rem 0.6rem 0.5rem;
+}
 .main-header h1 {
     margin: 0;
-    font-size: 2rem;
+    font-size: 2.05rem;
     font-weight: 600;
     color: #1a202c;
 }
 .main-header .subtitle {
-    margin-top: 0.35rem;
+    margin-top: 0.25rem;
     color: #5a6b7a;
     font-style: italic;
     font-size: 1rem;
 }
-.main-header .links { margin-top: 0.5rem; font-size: 0.88rem; color: #718096; }
-.main-header .links a { color: #3d4f5f; text-decoration: none; border-bottom: 1px dotted #8a9caa; }
-.main-header .links a:hover { opacity: 0.75; }
+.main-header .links {
+    margin-top: 0.4rem;
+    font-size: 0.86rem;
+    color: #718096;
+}
+.main-header .links a {
+    color: #3d4f5f;
+    text-decoration: none;
+    border-bottom: 1px dotted #8a9caa;
+}
+.main-header .links a:hover { opacity: 0.7; }
 
-.tabs { border: none !important; background: transparent !important; }
-.tab-nav {
-    justify-content: center !important;
-    gap: 0.25rem !important;
+.tabs, .tab-nav, .tabitem, .tabitem > .column {
     border: none !important;
     background: transparent !important;
+    box-shadow: none !important;
+}
+.tab-nav {
+    justify-content: center !important;
+    gap: 0.2rem !important;
+    margin-bottom: 0.2rem !important;
 }
 .tab-nav button {
     border: 1px solid transparent !important;
     background: none !important;
-    border-radius: 4px !important;
     color: #2d3748 !important;
-    font-size: 0.92rem !important;
-    padding: 0.4rem 0.9rem !important;
+    border-radius: 3px !important;
+    font-size: 0.94rem !important;
+    padding: 0.38rem 0.88rem !important;
 }
 .tab-nav button.selected {
+    font-weight: 700 !important;
     border-color: #2d3748 !important;
     color: #1a202c !important;
-    font-weight: 700 !important;
-}
-.tabitem, .tabitem > .column {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
 }
 
 .surface {
-    background: #f9fcfd;
-    border: 1px solid #d7e5ec;
+    background: #f7fcfe;
+    border: 1px solid #d8e7ee;
     border-radius: 8px;
-    padding: 1rem;
+    padding: 0.9rem;
 }
 
-.prose { max-width: 760px; margin: 0 auto; line-height: 1.85; color: #374151; }
-.prose h2 { color: #1a202c; font-weight: 600; margin-top: 1.7rem; }
-.prose h3 { color: #2d3748; font-weight: 600; }
-.prose code {
-    background: #edf3f7;
-    padding: 0.1rem 0.3rem;
-    border-radius: 3px;
-    font-family: 'Courier New', Consolas, monospace !important;
+.esctr-page .markdown-body,
+.esctr-page .prose {
+    max-width: 820px !important;
+    margin: 0 auto !important;
+    line-height: 1.85 !important;
+    color: #3b4a5a !important;
 }
-.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-.prose th, .prose td { border-bottom: 1px solid #dce7ee; padding: 0.5rem 0.45rem; text-align: left; }
-.prose th { color: #1a202c; font-weight: 600; }
+.esctr-page h1, .esctr-page h2, .esctr-page h3 {
+    color: #1a202c !important;
+    font-weight: 600 !important;
+}
+.esctr-page table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.esctr-page th, .esctr-page td {
+    border-bottom: 1px solid #d7e5ec;
+    padding: 0.45rem 0.5rem;
+    text-align: left;
+}
 
 .log-box textarea {
     font-family: 'Courier New', Consolas, monospace !important;
@@ -88,157 +105,66 @@ footer, .built-with, .gradio-container > footer { display: none !important; }
     line-height: 1.55 !important;
 }
 .reward-big textarea {
-    font-size: 2rem !important;
+    font-size: 1.9rem !important;
     font-weight: 700 !important;
     text-align: center !important;
 }
 .tool-btn { min-height: 42px !important; }
-.plot-img img { border-radius: 6px; border: 1px solid #dbe7ee; }
+.plot-img img {
+    border-radius: 6px;
+    border: 1px solid #dbe7ee;
+    background: #f7fcfe;
+}
 """
 
 
 # ── Overview Tab Content ─────────────────────────────────────────────────────
 
 OVERVIEW_MD = """
-<div class="prose">
+# ESCTR
+*Enterprise Supply Chain & Tax Reconciliation*
 
-## ESCTR: Enterprise Supply Chain & Tax Reconciliation
+ESCTR is an OpenEnv-compatible reinforcement learning environment for enterprise financial operations.
+An agent plays the role of a financial controller and must investigate discrepancies, compute valid
+adjustments, and handle adversarial vendor interactions.
 
-> *Training LLMs to be autonomous financial auditors — powered by Reinforcement Learning with Verifiable Rewards (RLVR)*
+## Task Suite
 
-Every day, enterprises process millions of procurement transactions. Between Purchase Orders,
-shipping manifests, SLA contracts, and vendor invoices — discrepancies are inevitable.
-Resolving them means humans manually cross-referencing siloed databases, interpreting
-contract clauses, and performing precise arithmetic under pressure.
+| Task | Difficulty | Objective |
+|---|---|---|
+| Procurement Reconciliation | Easy | Detect and quantify invoice overcharges |
+| SLA Enforcement | Medium | Compute penalties from delivery delays and SLA terms |
+| Adversarial Auditing | Hard | Resolve disputes and reject invalid settlement tactics |
 
-**ESCTR** frames this as a reinforcement learning problem. The agent operates as a
-financial controller, armed with four ERP tools, navigating a multi-step audit pipeline
-against adversarial vendors — graded by mathematically precise, verifiable reward signals.
+## Tools
 
-### Three Tasks, Escalating Stakes
+- `query_database` for operational and financial tables
+- `read_document` for raw contract and transaction artifacts
+- `communicate_vendor` for negotiation and claim rebuttal
+- `submit_financial_decision` for final terminal adjustment
 
-| Task | Difficulty | What the Agent Must Do |
-|------|-----------|----------------------|
-| **Procurement Reconciliation** | 🟢 Easy | Identify overcharged line items, calculate exact overcharge |
-| **SLA Enforcement** | 🟡 Medium | Discover late shipments, retrieve SLA contract, compute penalty |
-| **Adversarial Auditing** | 🔴 Hard | All above *plus* disprove vendor counter-claims using warehouse logs |
+## Reward Shape
 
-### Four ERP Tools
+`R_total = alpha * R_outcome + beta * R_trajectory - penalties`
 
-- `query_database` — search purchase orders, invoices, shipping logs, SLA contracts, warehouse logs
-- `read_document` — retrieve the full text of any document by ID
-- `communicate_vendor` — negotiate with an adversarial vendor that lies, deflects, and offers bad settlements
-- `submit_financial_decision` — submit the final adjustment (terminal action, ends the episode)
-
-### Reward Design
-
-```
-R_total = α · R_outcome + β · R_trajectory − penalties
-```
-
-- **R_outcome** (60–70%): Did the agent submit the *exact* correct adjustment?
-- **R_trajectory** (30–40%): Did the agent follow proper investigative procedure?
-- **Penalties**: Step costs, hallucination, accepting bad settlements
-
-Every scenario is **procedurally generated from a seed** — infinite training configurations with
-deterministic, reproducible grading. No memorization possible.
-
----
-
-*Use the **Playground** tab to try the environment interactively, or see **Training** for results from three model runs.*
-
-</div>
+- Outcome rewards exact final correctness
+- Trajectory rewards disciplined investigative flow
+- Penalties discourage invalid actions and poor process
 """
 
 
 # ── Training Tab Content ─────────────────────────────────────────────────────
 
 TRAINING_MD = """
-<div class="prose">
+# Logs
 
-## Training: Three Models, Three GPUs, One Reward Signal
+Training snapshots from ESCTR runs:
 
-We trained three models using **TRL's GRPOTrainer** with `environment_factory`,
-iterating across model sizes from 0.6B to 4B — following the approach of
-**small models + fast iteration**.
+- Qwen3-4B: stabilized tool usage with improved reward profile
+- Qwen3-1.7B: transfer behavior under HF Jobs infrastructure
+- Qwen3-0.6B: proof-of-concept baseline for fast iteration
 
-### 🚀 Qwen3-4B (Production Model)
-
-Trained on RTX 4090 (24GB VRAM) with 4-bit QLoRA. After overcoming "zero-reward collapse"
-through **shaped investigation rewards** and **high-temperature exploration (T=1.5)**, the model
-achieved:
-
-| Metric | Value |
-|--------|-------|
-| Peak Reward | **0.27** (vs 0.09 baseline) |
-| Tool Calls/Episode | Converged to **4.0** |
-| Tool Failures | **0** across 300 episodes |
-| Training Time | **71.3 minutes** |
-
-### 🔄 Qwen3-1.7B (HF Jobs — In Progress)
-
-Running on HuggingFace infrastructure (T4-medium), confirming reward architecture transfers cleanly:
-
-| Step | Loss | Reward | Tool Calls | Entropy |
-|------|------|--------|------------|---------|
-| 5 | 0.184 | **0.195** | **3.9** | 0.132 |
-| 10 | 0.116 | 0.195 | **3.9** | 0.127 |
-| 15 | 0.088 | 0.180 | 3.6 | 0.028 |
-| 20 | 0.186 | 0.190 | 3.8 | 0.047 |
-
-### ✅ Qwen3-0.6B (Proof of Concept)
-
-Initial validation: reward improved from **0.09 → 0.30** (+222%) over 500 episodes on T4 GPU.
-
-</div>
-"""
-
-
-# ── About Tab Content ────────────────────────────────────────────────────────
-
-ABOUT_MD = """
-<div class="prose">
-
-## Technical Summary
-
-| Parameter | 0.6B Run | 4B Run | 1.7B Run |
-|-----------|----------|--------|----------|
-| Model | Qwen/Qwen3-0.6B | Qwen/Qwen3-4B | Qwen/Qwen3-1.7B |
-| GPU | T4 (Colab) | RTX 4090 (RunPod) | T4 (HF Jobs) |
-| Quantization | None | 4-bit QLoRA | 4-bit QLoRA |
-| Adapter | Full model | LoRA (r=16) | LoRA (r=16) |
-| Episodes | 500 | 300 | 500 (ongoing) |
-| Training Time | ~2 hours | ~71 minutes | ~7 hours |
-| Framework | TRL GRPOTrainer | TRL GRPOTrainer | TRL GRPOTrainer |
-
-## Links
-
-- 🏢 [Live Environment](https://huggingface.co/spaces/musharraf7/esctr-environment)
-- 📝 [Blog Post](https://huggingface.co/spaces/musharraf7/esctr-environment/blob/main/Blog.md)
-- 📊 [Training Dashboard (Trackio)](https://huggingface.co/spaces/musharraf7/esctr-grpo-trained)
-- 💻 [Source Code (GitHub)](https://github.com/Musharraf1128/esctr-environment)
-- 🏋️ Training Scripts:
-  [train.py](https://huggingface.co/spaces/musharraf7/esctr-environment/blob/main/train.py) ·
-  [train_4b.py](https://huggingface.co/spaces/musharraf7/esctr-environment/blob/main/train_4b.py) ·
-  [train_hf_jobs.py](https://huggingface.co/spaces/musharraf7/esctr-environment/blob/main/train_hf_jobs.py)
-
-## Why This Matters
-
-ESCTR demonstrates that **RLVR can teach LLMs enterprise-grade financial reasoning** — a
-domain nearly absent from existing RL training benchmarks.
-
-Unlike game environments, our environment tests capabilities that exist in production:
-
-- **Real-world professional skills** — procurement auditing, SLA enforcement, dispute resolution
-- **Adversarial reasoning** — vendor negotiation with active deception
-- **Verifiable, precise rewards** — exact answers from contract mathematics
-- **Production integration** — the tool interface could plug into SAP or Oracle
-
----
-
-*Built for the [OpenEnv Hackathon](https://github.com/meta-pytorch/OpenEnv) by Musharraf.*
-
-</div>
+Plots below summarize reward movement, tool discipline, and loss trajectory.
 """
 
 
@@ -348,6 +274,15 @@ def submit_decision(env, log, step_count, amount, reason):
 
 PLOT_BASE = "https://raw.githubusercontent.com/Musharraf1128/esctr-environment/main/plots"
 
+
+def _load_blog_markdown() -> str:
+    root = Path(__file__).resolve().parents[1]
+    blog_path = root / "Blog.md"
+    if blog_path.exists():
+        return blog_path.read_text(encoding="utf-8")
+    return "# Blog\n\nBlog content not found."
+
+
 def build_gradio_app():
     with gr.Blocks(title="ESCTR Environment", css=CSS) as demo:
 
@@ -358,7 +293,7 @@ def build_gradio_app():
         # ── Header ────────────────────────────────────────────
         gr.HTML("""
         <div class="main-header">
-            <h1>🏢 ESCTR</h1>
+            <h1>ESCTR</h1>
             <div class="subtitle">Enterprise Supply Chain & Tax Reconciliation</div>
             <div class="links">
                 OpenEnv Hackathon 2026 ·
@@ -374,20 +309,20 @@ def build_gradio_app():
 
             # ── Tab 1: Overview ───────────────────────────────
             with gr.Tab("Readme"):
-                gr.HTML(OVERVIEW_MD)
+                gr.Markdown(OVERVIEW_MD, elem_classes=["esctr-page"])
 
             # ── Tab 2: Playground ─────────────────────────────
             with gr.Tab("Playground"):
                 with gr.Row():
                     # Left: Controls
                     with gr.Column(scale=1):
-                        gr.HTML('<div class="surface"><h3 style="margin-top:0;">Episode Controls</h3>')
+                        gr.HTML('<div class="surface"><h3 style="margin-top:0; margin-bottom:0.7rem;">Episode Controls</h3>')
 
                         task_dropdown = gr.Dropdown(
                             choices=[
-                                ("🟢 Procurement Reconciliation", "procurement_reconciliation"),
-                                ("🟡 SLA Enforcement", "sla_enforcement"),
-                                ("🔴 Adversarial Auditing", "adversarial_auditing"),
+                                ("Procurement Reconciliation", "procurement_reconciliation"),
+                                ("SLA Enforcement", "sla_enforcement"),
+                                ("Adversarial Auditing", "adversarial_auditing"),
                             ],
                             value="procurement_reconciliation",
                             label="Task",
@@ -397,25 +332,25 @@ def build_gradio_app():
                             placeholder="e.g., 42",
                             value="",
                         )
-                        reset_btn = gr.Button("🔄 Start New Episode", variant="primary", size="lg")
-                        gr.HTML('<div style="height:0.8rem;"></div><h3 style="margin:0.2rem 0 0.6rem 0;">Tools</h3>')
+                        reset_btn = gr.Button("Start New Episode", variant="primary", size="lg")
+                        gr.HTML('<div style="height:0.8rem;"></div><h3 style="margin:0.2rem 0 0.65rem 0;">Tools</h3>')
 
-                        with gr.Accordion("📊 Query Database", open=True):
+                        with gr.Accordion("Query Database", open=True):
                             db_table = gr.Dropdown(
                                 choices=["purchase_orders", "invoices", "shipping_logs", "sla_contracts", "warehouse_logs"],
                                 label="Table", value="purchase_orders",
                             )
                             query_btn = gr.Button("Run Query", elem_classes="tool-btn")
 
-                        with gr.Accordion("📄 Read Document", open=False):
+                        with gr.Accordion("Read Document", open=False):
                             doc_id_input = gr.Textbox(label="Document ID", placeholder="PO-2025-1234")
                             read_btn = gr.Button("Read Document", elem_classes="tool-btn")
 
-                        with gr.Accordion("💬 Contact Vendor", open=False):
+                        with gr.Accordion("Contact Vendor", open=False):
                             vendor_msg = gr.Textbox(label="Message", placeholder="We reject your settlement...", lines=2)
                             vendor_btn = gr.Button("Send Message", elem_classes="tool-btn")
 
-                        with gr.Accordion("⚖️ Submit Decision", open=False):
+                        with gr.Accordion("Submit Decision", open=False):
                             adj_amount = gr.Textbox(label="Adjustment ($)", placeholder="-450.00")
                             adj_reason = gr.Textbox(label="Reason", placeholder="Overcharge on line item...", lines=2)
                             submit_btn = gr.Button("Submit Decision", variant="stop", elem_classes="tool-btn")
@@ -428,10 +363,10 @@ def build_gradio_app():
 
                         with gr.Row():
                             reward_display = gr.Textbox(
-                                label="💰 Reward", value="—",
+                                label="Reward", value="—",
                                 interactive=False, elem_classes="reward-big",
                             )
-                            seed_display = gr.Textbox(label="🎲 Seed", value="—", interactive=False)
+                            seed_display = gr.Textbox(label="Seed", value="—", interactive=False)
 
                         log_output = gr.Textbox(
                             label="Investigation Log",
@@ -443,9 +378,9 @@ def build_gradio_app():
 
             # ── Tab 3: Training ───────────────────────────────
             with gr.Tab("Logs"):
-                gr.HTML(TRAINING_MD)
+                gr.Markdown(TRAINING_MD, elem_classes=["esctr-page"])
 
-                gr.Markdown("### 📈 Training Plots")
+                gr.Markdown("### Training Plots", elem_classes=["esctr-page"])
 
                 with gr.Row():
                     gr.Image(
@@ -483,9 +418,9 @@ def build_gradio_app():
                         elem_classes="plot-img",
                     )
 
-            # ── Tab 4: About ─────────────────────────────────
-            with gr.Tab("Fleet"):
-                gr.HTML(ABOUT_MD)
+            # ── Tab 4: Blog ──────────────────────────────────
+            with gr.Tab("Blog"):
+                gr.Markdown(_load_blog_markdown(), elem_classes=["esctr-page"])
 
         # ── Event Handlers ────────────────────────────────────
 

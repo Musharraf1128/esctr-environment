@@ -13,6 +13,7 @@ import gradio as gr
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from .models import ESCTRAction, ESCTRObservation, ESCTRState
@@ -156,22 +157,7 @@ def create_app() -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def root():
-        return """
-        <html>
-          <head><title>ESCTR Environment</title></head>
-          <body style="font-family: sans-serif; max-width: 880px; margin: 32px auto;">
-            <h1>ESCTR Environment</h1>
-            <p>OpenEnv-compatible financial auditing environment.</p>
-            <ul>
-              <li><a href="/demo" target="_blank">Interactive Demo (Gradio)</a></li>
-              <li><a href="/health" target="_blank">/health</a></li>
-              <li><a href="/schema" target="_blank">/schema</a></li>
-              <li><a href="/metadata" target="_blank">/metadata</a></li>
-              <li><a href="/trace" target="_blank">/trace</a></li>
-            </ul>
-          </body>
-        </html>
-        """
+        return RedirectResponse(url="/demo")
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
