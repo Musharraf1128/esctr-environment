@@ -157,7 +157,7 @@ def create_app() -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def root():
-        return RedirectResponse(url="/demo")
+        return RedirectResponse(url="/demo/", status_code=302)
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):

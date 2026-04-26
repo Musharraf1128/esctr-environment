@@ -284,7 +284,8 @@ def _load_blog_markdown() -> str:
 
 
 def build_gradio_app():
-    with gr.Blocks(title="ESCTR Environment", css=CSS) as demo:
+    with gr.Blocks(title="ESCTR Environment") as demo:
+        gr.HTML(f"<style>{CSS}</style>")
 
         # Hidden state
         env_state = gr.State(None)
