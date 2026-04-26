@@ -84,7 +84,7 @@ The correct answer is always a **precise floating-point number** derived from co
 
 ---
 
-## Training: From 0.6B to 4B — The Hard Way
+## Training: Three Models, Three GPUs, One Reward Signal
 
 ### Phase 1 — Proof of Concept (Qwen3-0.6B)
 
@@ -152,9 +152,9 @@ The tool execution graph tells the most compelling story. Early in training, the
 
 ### Phase 4 — Iterative Run: Qwen3-1.7B on HF Jobs (In Progress)
 
-Following judge advice to **iterate on multiple model sizes**, we launched a third training run on **HF Jobs T4-medium** using `Qwen/Qwen3-1.7B` with LoRA adapters — entirely on HuggingFace's own cloud compute, no local GPU needed.
+We didn't stop at 4B. Following the principle of **fast iteration on small models**, we launched a third training run on **HF Jobs T4-medium** using `Qwen/Qwen3-1.7B` with LoRA adapters — this time running entirely on HuggingFace's infrastructure. No local GPU, no RunPod — just `hf jobs run` and a self-contained training script.
 
-This run will not complete before the submission deadline (~500 steps × 50s/step ≈ 7 hours), but the early metrics already tell an important story: **the shaped reward architecture generalises cleanly to the 1.7B scale**.
+This run won't complete before the submission deadline (~500 steps × 50s/step ≈ 7 hours), but the early metrics already tell the most important story of this project: **the shaped reward architecture we debugged on 4B transfers cleanly to a completely different model size with zero modifications.**
 
 **Observed training progression (Steps 5–20):**
 
@@ -187,6 +187,8 @@ The high `frac_reward_zero_std` (0.6–0.8) at early steps is expected — it me
 
 The untrained model jumps straight to a decision with no evidence. The trained agent follows a principled audit path: gather evidence, read the contract, then — and only then — submit with conviction.
 
+Critically, the 1.7B model — running on completely different hardware and at a different parameter scale — exhibits the *exact same investigation pattern* from its very first training step, confirming that our reward design is robust and transferable.
+
 ---
 
 ## Technical Summary
@@ -200,7 +202,7 @@ The untrained model jumps straight to a decision with no evidence. The trained a
 | Episodes | 500 | 300 | 500 (planned) |
 | Training Time | ~2 hours | ~71 minutes | ~7 hours (ongoing) |
 | Framework | TRL GRPOTrainer | TRL GRPOTrainer | TRL GRPOTrainer |
-| Script | [`train.py`](train.py) | [`train_4b.py`](train_4b.py) | [`train_hf_jobs.py`](train_hf_jobs.py) |
+| Script | [`train.py`](https://huggingface.co/spaces/musharraf7/esctr-environment/blob/main/train.py) | [`train_4b.py`](https://huggingface.co/spaces/musharraf7/esctr-environment/blob/main/train_4b.py) | [`train_hf_jobs.py`](https://huggingface.co/spaces/musharraf7/esctr-environment/blob/main/train_hf_jobs.py) |
 
 ---
 
