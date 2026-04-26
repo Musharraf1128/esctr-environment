@@ -283,7 +283,7 @@ python generate_demo_artifacts.py
 
 ## Submission Materials
 
-- 📝 **Blog post**: [Training Autonomous Financial Auditors with RLVR](https://huggingface.co/blog/musharraf7/esctr-training-autonomous-financial-auditors)
+- 📝 **Writeup**: [Training Autonomous Financial Auditors with RLVR](blog_post.md)
 - 🤗 **HF Space**: [`musharraf7/esctr-environment`](https://huggingface.co/spaces/musharraf7/esctr-environment)
 - 🧠 **Trained Model (LoRA)**: [`musharraf7/esctr-grpo-4b-lora`](https://huggingface.co/musharraf7/esctr-grpo-4b-lora)
 - 📊 **Training Dashboard**: [Trackio](https://huggingface.co/spaces/musharraf7/esctr-grpo-trained)
