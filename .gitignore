@@ -9,6 +9,8 @@ build/
 venv/
 .pytest_cache/
 .mypy_cache/
+
+# Scratch / internal files (not for judges)
 hackathon-instructions.txt
 hackathon_instructions.txt
 preparatory_course.txt
@@ -23,11 +25,17 @@ Meta OpenEnv Hackathon Participant Help Guide.md
 smoke_test.py
 gpro.py
 hackathon_presentation.md
-esctr_hackathon_strategy.md
-OpenEnv Hackathon Opening Ceremony _ 25th Apr.txt
 generate_plots.py
+generate_4b_plots.py
 huggingface.db
 huggingface.db-journal
 Academic framing: what to cite and how to position ESCTR.txt
 hf_upload.py
 PLAN.md
+SUBMISSION_CHECKLIST.md
+README_old.md
+handover.md
+runpod_setup.sh
+train_runpod.py
+uv.lock
+esctr-environment/

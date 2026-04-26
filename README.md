@@ -139,6 +139,17 @@ We scaled our training to **Qwen/Qwen3-4B** on a single **RTX 4090 (24GB VRAM)**
 *Hardware Time: 300 Episodes completed in exactly 71.3 minutes.*
 *Model Weights: Available at [`musharraf7/esctr-grpo-4b-lora`](https://huggingface.co/musharraf7/esctr-grpo-4b-lora)*
 
+#### 📉 The Path to 4B: Overcoming "Zero-Reward Collapse"
+
+Scaling from 0.6B to 4B was **not** plug-and-play. Our first three training attempts resulted in complete failure — loss flat at `0.0`, the model learning nothing. By analyzing completion traces, we discovered and overcame two critical bottlenecks:
+
+1. **Token Budget Exhaustion**: Qwen3-4B's default behavior produces massive `<think>` reasoning blocks, exhausting the entire 512-token generation budget on internal monologue before making a single tool call. **Fix:** Disabled thinking mode via Jinja chat templates and raised `max_completion_length` to 1024.
+
+2. **Deterministic Starvation**: At `temperature=1.0`, all K=4 rollouts were identical — the model deterministically made exactly 3 investigation calls and stopped, never calling `submit_financial_decision`. With zero reward variance across the group, GRPO had **zero gradient signal**.
+   **Fix:** Implemented **Process Reward Shaping** — injecting `+0.05` partial credit for each valid investigation step. Raised `temperature=1.5` and `K=4` to force exploration diversity. This finally jump-started the gradient space.
+
+*This debugging process — from silent failure to shaped rewards — was the core engineering challenge of the project and took ~4 hours of iterative hypothesis testing.*
+
 ### Proof of Concept: Qwen3-0.6B
 
 We initially validated the environment loop with a 0.6B model running 500 episodes on a standard T4 GPU (~2 hours).
@@ -270,14 +281,13 @@ python generate_demo_artifacts.py
 # writes artifacts/demo_episode_trace.json + artifacts/demo_action_graph.mmd
 ```
 
-## Round 2 Storytelling Artifacts (Submission Links)
+## Submission Materials
 
-- Slide deck: `TODO_ADD_SLIDES_URL`
-- Demo video (<2 min): `TODO_ADD_VIDEO_URL`
-- Blog / writeup: `TODO_ADD_BLOG_URL`
-- Baseline vs trained episode trace: `artifacts/demo_episode_trace.json`
-- Action graph (Mermaid): `artifacts/demo_action_graph.mmd`
-- Ablation output: `artifacts/ablation_results.json`
+- 📝 **Blog post**: [Training Autonomous Financial Auditors with RLVR](https://huggingface.co/blog/musharraf7/esctr-training-autonomous-financial-auditors)
+- 🤗 **HF Space**: [`musharraf7/esctr-environment`](https://huggingface.co/spaces/musharraf7/esctr-environment)
+- 🧠 **Trained Model (LoRA)**: [`musharraf7/esctr-grpo-4b-lora`](https://huggingface.co/musharraf7/esctr-grpo-4b-lora)
+- 📊 **Training Dashboard**: [Trackio](https://huggingface.co/spaces/musharraf7/esctr-grpo-trained)
+- 🏋️ **Training Scripts**: [`train.py`](train.py) (0.6B) · [`train_4b.py`](train_4b.py) (4B + LoRA)
 
 ## Why This Matters
 
@@ -331,10 +341,14 @@ The baseline model jumps to a decision with no investigation, while the trained 
 │   ├── graders.py         # Multi-axis deterministic graders (3 tasks)
 │   └── models.py          # Pydantic Action/Observation/State schemas
 ├── plots/
-│   ├── reward_curve.png   # Training reward over steps
-│   ├── training_dashboard.png  # Multi-panel training metrics
-│   └── comparison_chart.png    # Baseline vs Trained comparison
-├── train.py               # TRL GRPO training script (environment_factory)
+│   ├── reward_curve.png       # 0.6B reward over steps
+│   ├── reward_curve_4b.png    # 4B reward over steps
+│   ├── tool_calls_4b.png      # 4B tool execution discipline
+│   ├── training_dashboard.png # Multi-panel training metrics
+│   └── comparison_chart.png   # Baseline vs Trained comparison
+├── train.py               # TRL GRPO training script (0.6B, environment_factory)
+├── train_4b.py            # 4B LoRA training script (RTX 4090 optimized)
+├── setup_runpod.sh        # RunPod environment setup script
 ├── inference.py           # Baseline inference script
 ├── openenv.yaml           # OpenEnv manifest
 ├── pyproject.toml         # Package config
@@ -352,10 +366,10 @@ The baseline model jumps to a decision with no investigation, while the trained 
 
 ## Limitations & Future Work
 
-- **Model scale**: Training on 0.6B showed tool mastery but not arithmetic reasoning; we predict 3B+ models will break through the 0.30 reward plateau to capture outcome rewards
-- **Single-task**: Current training focuses on Task 1 (Procurement Reconciliation); extending to SLA Enforcement and Adversarial Auditing requires curriculum-based training
-- **Vendor policy realism**: Current vendor profiles are rule-based; replacing with a second LLM (à la MultiAgentBench/TAMAS) would create a fully strategic multi-agent dynamic
-- **Scale + ablations**: Full multi-task GRPO with larger models and ablation studies (with/without distractors/risk shaping) remain future work
+- **Outcome reward**: Both the 0.6B and 4B models mastered investigation procedure (perfect tool discipline) but have not yet captured outcome rewards (exact arithmetic). We hypothesize that curriculum training or chain-of-thought prompting during RL could bridge this gap.
+- **Single-task**: Current training focuses on Task 1 (Procurement Reconciliation); extending to SLA Enforcement and Adversarial Auditing requires curriculum-based training with warm-start from the current checkpoint.
+- **Vendor policy realism**: Current vendor profiles are rule-based; replacing with a second LLM (à la MultiAgentBench/TAMAS) would create a fully strategic multi-agent dynamic.
+- **Reward variance**: The shaped reward function, while effective at breaking zero-reward collapse, produces low variance across rollouts — investigating entropy bonuses or curiosity-driven exploration could help.
 
 ## References
 
