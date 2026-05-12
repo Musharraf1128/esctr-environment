@@ -142,104 +142,107 @@ def build_gradio_app():
             # ── Tab 2: Playground ─────────────────────────────
             with gr.Tab("Playground"):
                 gr.HTML(EPISODE_SVG)
+                gr.HTML('<p style="text-align:center;font-family:IBM Plex Mono,monospace;font-size:0.85rem;color:#64748b;font-style:italic;margin:0 0 1rem">Select a task and seed below, then use the tools to investigate. Click submit when ready.</p>')
 
+                # Row 1: Task + Seed + Start
                 with gr.Row():
-                    # Left: Controls
-                    with gr.Column(scale=1):
-                        gr.Markdown("### Episode Controls")
+                    task_dropdown = gr.Dropdown(
+                        choices=[
+                            ("Procurement Reconciliation (Easy)",
+                             "procurement_reconciliation"),
+                            ("SLA Enforcement (Medium)",
+                             "sla_enforcement"),
+                            ("Adversarial Auditing (Hard)",
+                             "adversarial_auditing"),
+                        ],
+                        value="procurement_reconciliation",
+                        label="Task",
+                        scale=2,
+                    )
+                    seed_input = gr.Textbox(
+                        label="Seed",
+                        placeholder="random",
+                        value="",
+                        scale=1,
+                    )
+                    reset_btn = gr.Button(
+                        "▶ Start Episode",
+                        variant="primary",
+                        scale=1,
+                    )
 
-                        task_dropdown = gr.Dropdown(
+                # Status bar
+                with gr.Row():
+                    status_bar = gr.Textbox(
+                        label="Status",
+                        value="Click '▶ Start Episode' to begin",
+                        interactive=False,
+                        scale=3,
+                    )
+                    reward_display = gr.Textbox(
+                        label="Reward",
+                        value="—",
+                        interactive=False,
+                        scale=1,
+                    )
+                    seed_display = gr.Textbox(
+                        label="Active Seed",
+                        value="—",
+                        interactive=False,
+                        scale=1,
+                    )
+
+                # Row 2: Tools (left) + Log (right)
+                with gr.Row():
+                    with gr.Column(scale=1, min_width=300):
+                        gr.HTML('<p style="font-family:IBM Plex Mono,monospace;font-weight:600;font-size:0.9rem;color:#0f172a;margin:0.5rem 0">Tools</p>')
+
+                        # Tool 1: query_database
+                        db_table = gr.Dropdown(
                             choices=[
-                                ("Procurement Reconciliation (Easy)",
-                                 "procurement_reconciliation"),
-                                ("SLA Enforcement (Medium)",
-                                 "sla_enforcement"),
-                                ("Adversarial Auditing (Hard)",
-                                 "adversarial_auditing"),
+                                "purchase_orders", "invoices",
+                                "shipping_logs", "sla_contracts",
+                                "warehouse_logs",
                             ],
-                            value="procurement_reconciliation",
-                            label="Task",
+                            label="query_database → table",
+                            value="purchase_orders",
                         )
-                        seed_input = gr.Textbox(
-                            label="Seed (empty = random)",
-                            placeholder="42",
-                            value="",
+                        query_btn = gr.Button("Run Query")
+
+                        # Tool 2: read_document
+                        doc_id_input = gr.Textbox(
+                            label="read_document → ID",
+                            placeholder="PO-2025-1234",
                         )
-                        reset_btn = gr.Button(
-                            "Start New Episode",
-                            variant="primary", size="lg",
+                        read_btn = gr.Button("Read Document")
+
+                        # Tool 3: communicate_vendor
+                        vendor_msg = gr.Textbox(
+                            label="communicate_vendor → message",
+                            placeholder="We reject your settlement...",
+                            lines=2,
+                        )
+                        vendor_btn = gr.Button("Send Message")
+
+                        # Tool 4: submit_financial_decision
+                        gr.HTML('<hr style="border:none;border-top:1px solid #e2e8f0;margin:0.5rem 0">')
+                        adj_amount = gr.Textbox(
+                            label="submit_financial_decision → amount ($)",
+                            placeholder="-450.00",
+                        )
+                        adj_reason = gr.Textbox(
+                            label="Reason",
+                            placeholder="Overcharge on line items",
+                        )
+                        submit_btn = gr.Button(
+                            "⚡ Submit Decision", variant="stop",
                         )
 
-                        gr.Markdown("---")
-                        gr.Markdown("### Tools")
-
-                        with gr.Accordion("query_database", open=True):
-                            db_table = gr.Dropdown(
-                                choices=[
-                                    "purchase_orders", "invoices",
-                                    "shipping_logs", "sla_contracts",
-                                    "warehouse_logs",
-                                ],
-                                label="Table",
-                                value="purchase_orders",
-                            )
-                            query_btn = gr.Button("Run Query")
-
-                        with gr.Accordion("read_document", open=False):
-                            doc_id_input = gr.Textbox(
-                                label="Document ID",
-                                placeholder="PO-2025-1234",
-                            )
-                            read_btn = gr.Button("Read")
-
-                        with gr.Accordion("communicate_vendor", open=False):
-                            vendor_msg = gr.Textbox(
-                                label="Message",
-                                placeholder="We reject your settlement...",
-                                lines=2,
-                            )
-                            vendor_btn = gr.Button("Send")
-
-                        with gr.Accordion(
-                            "submit_financial_decision", open=False
-                        ):
-                            adj_amount = gr.Textbox(
-                                label="Adjustment ($)",
-                                placeholder="-450.00",
-                            )
-                            adj_reason = gr.Textbox(
-                                label="Reason",
-                                placeholder="Overcharge on line item...",
-                                lines=2,
-                            )
-                            submit_btn = gr.Button(
-                                "Submit Decision", variant="stop",
-                            )
-
-                    # Right: Log
                     with gr.Column(scale=2):
-                        status_bar = gr.Textbox(
-                            label="Status",
-                            value="Click 'Start New Episode' to begin",
-                            interactive=False,
-                        )
-
-                        with gr.Row():
-                            reward_display = gr.Textbox(
-                                label="Reward",
-                                value="—",
-                                interactive=False,
-                            )
-                            seed_display = gr.Textbox(
-                                label="Seed",
-                                value="—",
-                                interactive=False,
-                            )
-
                         log_output = gr.Textbox(
                             label="Investigation Log",
                             value="Waiting for episode...",
-                            lines=22,
+                            lines=28,
                             max_lines=50,
                             interactive=False,
                         )

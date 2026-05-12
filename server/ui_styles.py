@@ -3,9 +3,11 @@
 INJECT_CSS = """<style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
 .gradio-container{background:linear-gradient(135deg,#dbeafe 0%,#e0e7ff 40%,#ede9fe 70%,#ecfdf5 100%)!important;font-family:'IBM Plex Mono',monospace!important;color:#1e293b!important;max-width:960px!important;margin:0 auto!important}
-.tabs>.tab-nav{justify-content:center!important;border-bottom:none!important;gap:4px!important;padding:8px 0!important;background:transparent!important}
-.tabs>.tab-nav>button{border:1px solid #cbd5e1!important;border-radius:6px!important;padding:8px 20px!important;font-family:'IBM Plex Mono',monospace!important;font-weight:500!important;background:#fff!important;color:#64748b!important;font-size:13px!important}
-.tabs>.tab-nav>button.selected{border-color:#1e293b!important;color:#1e293b!important;font-weight:600!important;background:#f8fafc!important}
+/* Tabs — border-bottom highlight, no dark hover */
+.tabs>.tab-nav{justify-content:center!important;border-bottom:none!important;gap:8px!important;padding:8px 0!important;background:transparent!important}
+.tabs>.tab-nav>button{border:1px solid transparent!important;border-radius:0!important;padding:8px 20px!important;font-family:'IBM Plex Mono',monospace!important;font-weight:500!important;background:transparent!important;color:#64748b!important;font-size:13px!important;border-bottom:2px solid transparent!important}
+.tabs>.tab-nav>button:hover{background:transparent!important;color:#1e293b!important;border-bottom:2px solid #94a3b8!important}
+.tabs>.tab-nav>button.selected{border:1px solid #1e293b!important;border-radius:6px!important;color:#1e293b!important;font-weight:600!important;background:#fff!important}
 .tabitem{background:transparent!important;border:none!important}
 label,span{font-family:'IBM Plex Mono',monospace!important;color:#334155!important}
 .prose{max-width:760px;margin:0 auto;line-height:1.8;color:#334155}
@@ -31,14 +33,23 @@ label,span{font-family:'IBM Plex Mono',monospace!important;color:#334155!importa
 .lb-table .model{font-weight:500;color:#0f172a}
 .lb-table .best{color:#16a34a;font-weight:700}
 .lb-table .ongoing{color:#ca8a04;font-style:italic}
+/* Form inputs — always white bg, dark text */
 input,textarea,select,.gr-input,.gr-text-input{background:#fff!important;color:#1e293b!important;border-color:#cbd5e1!important;font-family:'IBM Plex Mono',monospace!important}
-.gr-button{font-family:'IBM Plex Mono',monospace!important;color:#1e293b!important}
-.gr-panel,.gr-box,.gr-form,.gr-group{background:#fff!important;border-color:#e2e8f0!important}
-.gr-accordion{background:#f8fafc!important;border-color:#e2e8f0!important}
 textarea{font-family:'IBM Plex Mono',monospace!important;font-size:0.82rem!important;color:#1e293b!important}
-/* Force dark text on light background — override Gradio 6 theme */
-*{--body-text-color:#1e293b!important;--block-label-text-color:#334155!important;--block-title-text-color:#0f172a!important;--input-text-color:#1e293b!important;--color-accent:#4f46e5!important}
-.gradio-container *:not(svg *):not(.svgbox *){color:inherit}
+/* Buttons */
+.gr-button{font-family:'IBM Plex Mono',monospace!important;color:#1e293b!important;background:#fff!important;border:1px solid #cbd5e1!important}
+.gr-button:hover{background:#f1f5f9!important}
+.gr-button.primary,.gr-button[variant="primary"],button.primary{background:#4f46e5!important;color:#fff!important;border-color:#4f46e5!important}
+.gr-button.stop,.gr-button[variant="stop"],button.stop{background:#dc2626!important;color:#fff!important;border-color:#dc2626!important}
+/* Panels, groups, boxes — white */
+.gr-panel,.gr-box,.gr-form,.gr-group,.panel,.block{background:#fff!important;border-color:#e2e8f0!important}
+/* Accordions — light bg, dark text headers */
+.gr-accordion,.accordion{background:#f8fafc!important;border-color:#e2e8f0!important;border:1px solid #e2e8f0!important;border-radius:8px!important}
+.gr-accordion>.label-wrap,.accordion>.label-wrap{background:#f8fafc!important;color:#1e293b!important}
+.gr-accordion>.label-wrap *,.accordion>.label-wrap *{color:#1e293b!important}
+.gr-accordion>.label-wrap:hover,.accordion>.label-wrap:hover{background:#f1f5f9!important}
+/* Force dark text on light background — override Gradio 6 theme vars */
+*{--body-text-color:#1e293b!important;--block-label-text-color:#334155!important;--block-title-text-color:#0f172a!important;--input-text-color:#1e293b!important;--color-accent:#4f46e5!important;--block-background-fill:#fff!important;--background-fill-secondary:#f8fafc!important;--border-color-primary:#e2e8f0!important;--block-border-color:#e2e8f0!important;--button-secondary-background-fill:#fff!important;--button-secondary-text-color:#1e293b!important;--button-secondary-border-color:#cbd5e1!important}
 .gradio-container{color:#1e293b!important}
 .gradio-container p,.gradio-container span,.gradio-container div,.gradio-container li,.gradio-container td,.gradio-container th,.gradio-container label,.gradio-container h1,.gradio-container h2,.gradio-container h3,.gradio-container h4,.gradio-container h5,.gradio-container h6{color:#1e293b!important;font-family:'IBM Plex Mono',monospace!important}
 .gradio-container .prose p,.gradio-container .prose span,.gradio-container .prose li,.gradio-container .prose td{color:#334155!important}
@@ -54,9 +65,12 @@ textarea{font-family:'IBM Plex Mono',monospace!important;font-size:0.82rem!impor
 .gradio-container .lb-table .ongoing,.gradio-container .lb-table .ongoing *{color:#ca8a04!important}
 .gradio-container .lb-table .rank{color:#64748b!important}
 .gradio-container .formula,.gradio-container .formula *{color:#7c3aed!important}
-.gradio-container .markdown-text,.gradio-container .md,.gradio-container .gr-markdown{color:#1e293b!important}
 [data-testid] label,[data-testid] span{color:#334155!important}
 .block-label,.block-title,.label-text{color:#334155!important}
+/* Dropdown — light */
+.dropdown,.gr-dropdown{background:#fff!important;color:#1e293b!important}
+.dropdown li,.gr-dropdown li{color:#1e293b!important;background:#fff!important}
+.dropdown li:hover,.gr-dropdown li:hover{background:#f1f5f9!important}
 </style>"""
 
 HEADER_HTML = """<div style="text-align:center;padding:2rem 1rem 0.5rem">
