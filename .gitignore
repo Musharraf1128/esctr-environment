@@ -9,6 +9,8 @@ build/
 venv/
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+.ruff_cache
 
 # Scratch / internal files (not for judges)
 hackathon-instructions.txt
@@ -41,3 +43,4 @@ esctr-environment/
 esctr-environment/
 youtube_script.md
 setup_runpod.sh
+gradio_ui_app_refrence.py
